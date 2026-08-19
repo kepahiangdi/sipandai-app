@@ -18,6 +18,8 @@ Estimasi waktu: 20–30 menit.
 | `supabase/03_storage.sql` | Bucket `bukti-laporan` & `profile-photos` beserta policy-nya |
 | `supabase/04_seed_wilayah.sql` | 8 kecamatan, 12 kelurahan, 105 desa Kabupaten Kepahiang |
 | `supabase/05_admin.sql` | Mengangkat akun pertama menjadi `admin_kesbangpol` |
+| `supabase/06_operator.sql` | Menetapkan peran & kecamatan operator (bila akun dibuat lewat Dashboard) |
+| `supabase/07_role_kepala.sql` | Menambah peran `kepala_badan` (Kepala Badan Kesbangpol) |
 
 Struktur database yang dibuat:
 
@@ -175,6 +177,7 @@ Selain menyiapkan database, beberapa masalah pada kode ikut dibereskan:
 
 | Role | Laporan | Koordinasi | Kelola user |
 |---|---|---|---|
+| `kepala_badan` | lihat/ubah/hapus semua, validasi laporan publik | penuh | ya |
 | `admin_kesbangpol` | lihat/ubah/hapus semua, validasi laporan publik | penuh | ya |
 | `operator_kec` | hanya kecamatannya sendiri (lihat, buat, ubah) | buat & ubah miliknya/kecamatannya | tidak |
 | `viewer` | lihat semua, tidak bisa mengubah | lihat | tidak |

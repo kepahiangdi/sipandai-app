@@ -19,6 +19,19 @@ database, autentikasi, dan penyimpanan berkas.
 - **Kelola Pengguna** — admin membuat akun operator kecamatan / viewer
 - **Notifikasi real-time** — lonceng notifikasi terisi otomatis saat ada laporan berisiko tinggi
 
+## Tampilan
+
+| Tombol lapor di peta | Menentukan titik kejadian |
+|---|---|
+| <img src="docs/img/peta-tombol-lapor.jpg" width="260"> | <img src="docs/img/peta-pilih-titik.jpg" width="260"> |
+
+| Formulir di ponsel | Formulir di layar lebar |
+|---|---|
+| <img src="docs/img/peta-formulir-ponsel.jpg" width="260"> | <img src="docs/img/peta-formulir-desktop.jpg" width="420"> |
+
+> Gambar di atas diambil dari pengujian otomatis, sehingga latar petanya masih
+> berupa warna polos, bukan peta OpenStreetMap yang sebenarnya.
+
 ## Struktur berkas
 
 ```
@@ -44,6 +57,7 @@ database, autentikasi, dan penyimpanan berkas.
 │   ├── profil.js           Profil & foto
 │   ├── notifications.js    Notifikasi
 │   └── sync.js             Antrean offline
+├── docs/img/               Tangkapan layar untuk README (tidak dipakai aplikasi)
 ├── supabase/               📦 Skrip SQL penyiapan database (jalankan berurutan)
 └── PANDUAN-MIGRASI-SUPABASE.md   Langkah lengkap penyiapan
 ```
@@ -59,7 +73,8 @@ database, autentikasi, dan penyimpanan berkas.
 
 | Role | Kemampuan |
 |---|---|
-| `admin_kesbangpol` | Akses penuh seluruh kabupaten, validasi laporan publik, kelola pengguna |
+| `kepala_badan` | Kepala Badan Kesbangpol. Wewenang penuh se-kabupaten: melihat semua laporan, validasi laporan warga, disposisi, kelola pengguna |
+| `admin_kesbangpol` | Administrator / staf. Wewenang sama dengan Kepala Badan; dipisahkan agar jelas tindakan mana yang diambil pimpinan |
 | `operator_kec` | Membuat & mengubah data pada kecamatannya sendiri |
 | `viewer` | Hanya membaca |
 
