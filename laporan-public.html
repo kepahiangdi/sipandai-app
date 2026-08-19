@@ -46,21 +46,15 @@
       <div class="form-group">
         <label>Kecamatan <span class="required">*</span></label>
         <select id="publicKecamatan" class="form-control" required>
-          <option value="">Pilih Kecamatan</option>
-          <option value="8">Kepahiang</option>
-          <option value="9">Tebat Karai</option>
-          <option value="10">Merigi</option>
-          <option value="11">Kabawetan</option>
-          <option value="12">Muara Kemumu</option>
-          <option value="13">Bermani Ilir</option>
-          <option value="14">Seberang Musi</option>
-          <option value="15">Ujan Mas</option>
+          <option value="">Memuat kecamatan…</option>
         </select>
       </div>
 
       <div class="form-group">
         <label>Desa / Kelurahan <span class="required">*</span></label>
-        <input type="text" id="publicDesa" class="form-control" required placeholder="Nama desa/kelurahan">
+        <select id="publicDesa" class="form-control" required disabled>
+          <option value="">Pilih Kecamatan Dulu</option>
+        </select>
       </div>
 
       <div class="form-group">
@@ -123,7 +117,69 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
   <script>
-    // Simple public report submit
+    // ==========================================
+    // Dropdown cascading kecamatan -> desa (dari database)
+    // ==========================================
+    const selKec = document.getElementById('publicKecamatan');
+    const selDesa = document.getElementById('publicDesa');
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!window.sbClient) {
+        selKec.innerHTML = '<option value="">❌ Database belum terhubung</option>';
+        return;
+      }
+      try {
+        const { data, error } = await window.sbClient
+          .from('kecamatan').select('id, nama').order('nama');
+        if (error) throw error;
+
+        selKec.innerHTML = '<option value="">Pilih Kecamatan</option>';
+        data.forEach(k => {
+          const o = document.createElement('option');
+          o.value = k.id; o.textContent = k.nama;
+          selKec.appendChild(o);
+        });
+      } catch (err) {
+        console.error('Gagal memuat kecamatan:', err);
+        selKec.innerHTML = '<option value="">❌ Gagal memuat kecamatan</option>';
+      }
+    });
+
+    selKec?.addEventListener('change', async (e) => {
+      const kecId = e.target.value;
+      selDesa.disabled = true;
+
+      if (!kecId) {
+        selDesa.innerHTML = '<option value="">Pilih Kecamatan Dulu</option>';
+        return;
+      }
+
+      selDesa.innerHTML = '<option value="">⏳ Memuat desa…</option>';
+      try {
+        const { data, error } = await window.sbClient
+          .from('desa').select('id, nama, jenis')
+          .eq('kecamatan_id', parseInt(kecId))
+          .order('nama');
+        if (error) throw error;
+
+        selDesa.innerHTML = '<option value="">Pilih Desa / Kelurahan</option>';
+        data.forEach(d => {
+          const o = document.createElement('option');
+          o.value = d.id;
+          o.textContent = d.jenis === 'kelurahan' ? `Kel. ${d.nama}` : d.nama;
+          o.dataset.nama = d.nama;
+          selDesa.appendChild(o);
+        });
+        selDesa.disabled = false;
+      } catch (err) {
+        console.error('Gagal memuat desa:', err);
+        selDesa.innerHTML = '<option value="">❌ Gagal memuat desa</option>';
+      }
+    });
+
+    // ==========================================
+    // Kirim laporan publik
+    // ==========================================
     document.getElementById('publicReportForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       
@@ -138,37 +194,30 @@
       btn.textContent = '⏳ Mengirim...';
       
       try {
-        const payload = {
-          judul: document.getElementById('publicJudul').value.trim(),
-          kecamatan_id: parseInt(document.getElementById('publicKecamatan').value),
-          alamat_lokasi: document.getElementById('publicLokasi').value.trim(),
-          desa: document.getElementById('publicDesa').value.trim(), // Simpan sebagai text dulu
-          lokasi_lat: parseFloat(document.getElementById('publicLat').value) || null,
-          lokasi_lng: parseFloat(document.getElementById('publicLng').value) || null,
-          deskripsi: document.getElementById('publicDeskripsi').value.trim(),
-          kategori: document.getElementById('publicKategori').value || 'Lainnya',
-          contact_info: document.getElementById('publicKontak').value.trim() || null,
-          
-          // ✅ Flag khusus laporan publik
-          is_public: true,
-          status: 'pending_validation', // ⚠️ Tidak langsung masuk sistem aktif
-          
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-        
-        const { data, error } = await window.sbClient
-          .from('conflict_reports')
-          .insert([payload])
-          .select('id')
-          .single();
-        
+        const opsiDesa = selDesa.selectedOptions?.[0];
+
+        // Dikirim lewat fungsi database submit_public_report().
+        // Pelapor anonim sengaja TIDAK diberi hak baca tabel laporan,
+        // jadi insert langsung + .select() tidak dipakai di sini.
+        const { data: newId, error } = await window.sbClient.rpc('submit_public_report', {
+          p_judul:        document.getElementById('publicJudul').value.trim(),
+          p_deskripsi:    document.getElementById('publicDeskripsi').value.trim(),
+          p_kecamatan_id: parseInt(selKec.value),
+          p_desa_id:      selDesa.value ? parseInt(selDesa.value) : null,
+          p_desa_nama:    opsiDesa?.dataset?.nama || null,
+          p_alamat:       document.getElementById('publicLokasi').value.trim(),
+          p_lat:          parseFloat(document.getElementById('publicLat').value) || null,
+          p_lng:          parseFloat(document.getElementById('publicLng').value) || null,
+          p_kategori:     document.getElementById('publicKategori').value || 'Lainnya',
+          p_kontak:       document.getElementById('publicKontak').value.trim() || null
+        });
+
         if (error) throw error;
-        
+
         // Tampilkan sukses
         document.getElementById('publicReportForm').style.display = 'none';
         document.getElementById('successMessage').classList.remove('d-none');
-        document.getElementById('referenceNumber').textContent = `REF-${data.id}-${Date.now().toString(36).slice(0,4).toUpperCase()}`;
+        document.getElementById('referenceNumber').textContent = `REF-${newId}-${Date.now().toString(36).slice(0,4).toUpperCase()}`;
         
         // Reset form (opsional)
         // e.target.reset();
