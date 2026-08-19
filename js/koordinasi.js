@@ -462,7 +462,7 @@ function formatStatus(status) {
 
 function canEditKoordinasi(item) {
   const user = JSON.parse(localStorage.getItem('sipandai_user') || '{}');
-  if (user.role === 'admin_kesbangpol') return true;
+  if (window.app.isPimpinan(user.role)) return true;
   if (user.role === 'operator_kec' && item.kecamatan_id === user.kecamatan_id) return true;
   return false;
 }

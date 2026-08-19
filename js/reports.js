@@ -51,7 +51,7 @@ async function initReportPage() {
 
   // Admin: langsung hitung antrean validasi laporan publik
   const user = JSON.parse(localStorage.getItem('sipandai_user') || '{}');
-  if (user.role === 'admin_kesbangpol') {
+  if (window.app.isPimpinan(user.role)) {
     await fetchPendingValidation();
   }
 
@@ -293,14 +293,14 @@ function renderTable(data) {
 
 function canEditReport(item) {
   const user = JSON.parse(localStorage.getItem('sipandai_user') || '{}');
-  if (user.role === 'admin_kesbangpol') return true;
+  if (window.app.isPimpinan(user.role)) return true;
   if (user.role === 'operator_kec' && item._raw?.kecamatan_id === user.kecamatan_id) return true;
   return false;
 }
 
 function canDeleteReport(item) {
   const user = JSON.parse(localStorage.getItem('sipandai_user') || '{}');
-  return user.role === 'admin_kesbangpol';
+  return window.app.isPimpinan(user.role);
 }
 
 function renderPagination(totalCount) {
@@ -924,7 +924,7 @@ function showReportModal(data) {
   if (updateSection) {
     // Cek apakah user boleh edit
     const user = JSON.parse(localStorage.getItem('sipandai_user') || '{}');
-    const canEdit = user.role === 'admin_kesbangpol' || 
+    const canEdit = window.app.isPimpinan(user.role) ||
                     (user.role === 'operator_kec' && data.kecamatan_id === user.kecamatan_id);
     
     if (canEdit) {

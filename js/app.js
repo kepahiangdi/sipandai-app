@@ -93,6 +93,20 @@ async function updateUserUI(session) {
   });
 }
 
+// Peran dengan wewenang penuh se-kabupaten.
+// Dipakai menggantikan pemeriksaan langsung === 'admin_kesbangpol',
+// agar penambahan peran kepala_badan berlaku serentak di semua halaman.
+const ROLE_PIMPINAN = ['kepala_badan', 'admin_kesbangpol'];
+
+function isPimpinan(role) {
+  const r = role || JSON.parse(localStorage.getItem('sipandai_user') || '{}').role;
+  return ROLE_PIMPINAN.includes(r);
+}
+
+function labelRole(role) {
+  return (window.APP_CONFIG?.roleLabel || {})[role] || role || '-';
+}
+
 function checkRole(requiredRoles) {
   const user = JSON.parse(localStorage.getItem('sipandai_user') || '{}');
   const roles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
@@ -253,5 +267,7 @@ window.app = {
   getRisikoClass,
   getStatusClass,
   checkRole,
+  isPimpinan,
+  labelRole,
   guardProtectedPage
 };

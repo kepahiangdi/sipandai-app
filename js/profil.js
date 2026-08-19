@@ -26,9 +26,9 @@ async function loadProfileData() {
     // Update UI
     document.getElementById('profileNama').textContent = profile.nama_lengkap || '-';
     document.getElementById('profileEmail').textContent = user.email || '-';
-    document.getElementById('profileRole').textContent = profile.role || '-';
+    document.getElementById('profileRole').textContent = window.app.labelRole(profile.role);
     document.getElementById('profileWilayah').textContent = 
-      profile.kecamatan?.nama || (profile.role === 'admin_kesbangpol' ? 'Semua Wilayah' : '-');
+      profile.kecamatan?.nama || (window.app.isPimpinan(profile.role) ? 'Semua Wilayah' : '-');
     document.getElementById('profileJoin').textContent = 
       window.app.formatDate(profile.created_at);
     

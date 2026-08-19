@@ -31,9 +31,18 @@ const APP_CONFIG = {
   sessionTimeout: 3600000,             // 1 jam (ms)
   authEmailDomain: 'sipandai.local',   // username -> username@sipandai.local
   roles: {
-    ADMIN: 'admin_kesbangpol',
+    KEPALA: 'kepala_badan',        // Kepala Badan Kesbangpol
+    ADMIN: 'admin_kesbangpol',     // Administrator / staf
     OPERATOR: 'operator_kec',
     VIEWER: 'viewer'
+  },
+  // Peran berwewenang penuh se-kabupaten
+  rolePimpinan: ['kepala_badan', 'admin_kesbangpol'],
+  roleLabel: {
+    kepala_badan:     'Kepala Badan',
+    admin_kesbangpol: 'Administrator',
+    operator_kec:     'Operator Kecamatan',
+    viewer:           'Viewer / Staf'
   }
 };
 

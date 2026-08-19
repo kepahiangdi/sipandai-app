@@ -12,8 +12,16 @@ document.getElementById('togglePassword')?.addEventListener('click', function ()
 document.getElementById('formLogin')?.addEventListener('submit', async function (e) {
   e.preventDefault();
   
-  const usernameInput = document.getElementById('username').value.trim().toLowerCase().replace(/\s+/g, '_');
-const email = `${usernameInput}@sipandai.local`; // Format internal Supabase
+  // Terima dua bentuk masukan:
+  //   "admin"                 -> admin@sipandai.local
+  //   "admin@sipandai.local"  -> dipakai apa adanya
+  // Sebelumnya domain selalu ditambahkan, sehingga mengetik alamat email
+  // lengkap menghasilkan "admin@sipandai.local@sipandai.local" dan gagal login.
+  const domain = window.APP_CONFIG?.authEmailDomain || 'sipandai.local';
+  const usernameInput = document.getElementById('username').value.trim().toLowerCase();
+  const email = usernameInput.includes('@')
+    ? usernameInput
+    : `${usernameInput.replace(/\s+/g, '_')}@${domain}`;
   const password = document.getElementById('password').value;
   const btnSubmit = document.getElementById('btnSubmit');
   const btnText = btnSubmit.querySelector('.btn-text');
@@ -74,7 +82,7 @@ const email = `${usernameInput}@sipandai.local`; // Format internal Supabase
     if (profile.foto_url) localStorage.setItem('sipandai_foto_url', profile.foto_url);
     
     // Redirect berdasarkan role
-    if (profile.role === 'admin_kesbangpol') {
+    if (profile.role === 'admin_kesbangpol' || profile.role === 'kepala_badan') {
       window.location.href = 'dashboard.html';
     } else if (profile.role === 'operator_kec') {
       window.location.href = 'laporan.html';

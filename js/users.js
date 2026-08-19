@@ -1,6 +1,7 @@
 /**
  * js/users.js
- * Manajemen Pengguna — HANYA untuk halaman users.html (admin_kesbangpol)
+ * Manajemen Pengguna — HANYA untuk halaman users.html
+ * Dapat diakses oleh admin_kesbangpol dan kepala_badan.
  *
  * Perbaikan penting:
  *  1. Guard admin hanya berjalan bila elemen users.html benar-benar ada.
@@ -18,8 +19,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!document.getElementById('userTableBody')) return;
 
   const user = JSON.parse(localStorage.getItem('sipandai_user') || '{}');
-  if (user.role !== 'admin_kesbangpol') {
-    window.app?.showToast?.('🚫 Akses ditolak. Hanya admin yang bisa mengelola user.', 'error');
+  if (!window.app.isPimpinan(user.role)) {
+    window.app?.showToast?.('🚫 Akses ditolak. Hanya pimpinan yang bisa mengelola user.', 'error');
     setTimeout(() => (window.location.href = 'dashboard.html'), 1500);
     return;
   }
@@ -78,14 +79,14 @@ async function loadUsers() {
       tr.innerHTML = `
         <td><strong>${escapeHtml(u.nama_lengkap) || '-'}</strong></td>
         <td><code title="${u.id}">${idPendek}</code></td>
-        <td><span class="status-badge ${u.role === 'admin_kesbangpol' ? 'status-diproses' : 'status-baru'}">${u.role}</span></td>
-        <td>${u.kecamatan?.nama || (u.role === 'admin_kesbangpol' ? 'Semua' : '-')}</td>
+        <td><span class="status-badge ${window.app.isPimpinan(u.role) ? 'status-diproses' : 'status-baru'}">${window.app.labelRole(u.role)}</span></td>
+        <td>${u.kecamatan?.nama || (window.app.isPimpinan(u.role) ? 'Semua' : '-')}</td>
         <td>${window.app.formatDate(u.created_at)}</td>
         <td>
-          ${u.role !== 'admin_kesbangpol' ? `
+          ${!window.app.isPimpinan(u.role) ? `
             <button class="btn-action" onclick="resetUserPassword('${u.id}')">🔁 Reset PW</button>
             <button class="btn-action text-danger" onclick="confirmDeleteUser('${u.id}')">🗑️</button>
-          ` : '<span class="text-muted">Admin</span>'}
+          ` : `<span class="text-muted">${window.app.labelRole(u.role)}</span>`}
         </td>
       `;
       tbody.appendChild(tr);
@@ -121,6 +122,12 @@ function setupAddUserForm() {
       window.app.showToast('Semua field wajib diisi', 'error');
       return;
     }
+    if (window.app.isPimpinan(role) && !confirm(
+          `Beri wewenang PENUH se-kabupaten kepada "${nama}" sebagai ${window.app.labelRole(role)}?\n\n` +
+          'Akun ini nanti dapat melihat seluruh laporan, memvalidasi laporan warga, ' +
+          'serta membuat & menghapus akun pengguna lain.')) {
+      return;
+    }
     if (role === 'operator_kec' && !kecamatan_id) {
       window.app.showToast('Operator kecamatan wajib dipilihkan kecamatannya', 'error');
       return;
@@ -129,20 +136,28 @@ function setupAddUserForm() {
     const btn = form.querySelector('button[type="submit"]');
     window.app.setLoading(btn, true);
 
-    // 🔐 Simpan sesi admin dulu — signUp akan menimpa sesi aktif
+    // 🔐 Simpan sesi pimpinan dulu — signUp akan menimpa sesi aktif
     const { data: { session: adminSession } } = await window.sbClient.auth.getSession();
+    let userBaruId = null;      // diisi bila pendaftaran berhasil
+    let peranDiminta = null;    // diisi bila peran perlu dinaikkan setelah sesi pulih
 
     try {
       const domain = window.APP_CONFIG?.authEmailDomain || 'sipandai.local';
+
+      // Peran pimpinan (kepala_badan / admin_kesbangpol) SENGAJA tidak dikirim
+      // lewat metadata pendaftaran — trigger handle_new_user() memang menolaknya,
+      // supaya tidak ada jalan bagi orang luar mengangkat dirinya jadi pimpinan.
+      // Untuk peran itu, akun dibuat dulu sebagai viewer, lalu dinaikkan
+      // melalui UPDATE yang dijalankan memakai sesi pimpinan yang sedang login.
+      const perluDinaikkan = window.app.isPimpinan(role);
 
       const { data, error: signUpError } = await window.sbClient.auth.signUp({
         email: `${username}@${domain}`,
         password: password,
         options: {
-          // Dibaca oleh trigger handle_new_user() di database
           data: {
             nama_lengkap: nama,
-            role: role,                                  // hanya operator_kec / viewer diterima DB
+            role: perluDinaikkan ? 'viewer' : role,
             kecamatan_id: kecamatan_id ? String(kecamatan_id) : ''
           }
         }
@@ -150,6 +165,9 @@ function setupAddUserForm() {
 
       if (signUpError) throw signUpError;
       if (!data.user) throw new Error('Gagal membuat user');
+
+      userBaruId = data.user.id;
+      peranDiminta = perluDinaikkan ? role : null;
 
       window.app.showToast(`✅ User "${nama}" dibuat. Username untuk login: ${username}`, 'success');
       form.reset();
@@ -163,7 +181,7 @@ function setupAddUserForm() {
       window.app.showToast('❌ ' + msg, 'error');
 
     } finally {
-      // 🔐 Kembalikan sesi admin apa pun hasilnya
+      // 🔐 Kembalikan sesi pimpinan apa pun hasilnya
       if (adminSession) {
         try {
           await window.sbClient.auth.setSession({
@@ -171,9 +189,29 @@ function setupAddUserForm() {
             refresh_token: adminSession.refresh_token
           });
         } catch (e) {
-          console.warn('⚠️ Gagal memulihkan sesi admin:', e.message);
+          console.warn('⚠️ Gagal memulihkan sesi pimpinan:', e.message);
         }
       }
+
+      // Naikkan peran SETELAH sesi pimpinan pulih, sehingga aturan database
+      // melihatnya sebagai tindakan pimpinan — bukan tindakan user baru itu sendiri.
+      if (userBaruId && peranDiminta) {
+        try {
+          const { error } = await window.sbClient
+            .from('profiles')
+            .update({ role: peranDiminta, kecamatan_id: null })
+            .eq('id', userBaruId);
+          if (error) throw error;
+          window.app.showToast(`✅ Peran ditetapkan: ${window.app.labelRole(peranDiminta)}`, 'success');
+        } catch (e) {
+          console.error('Gagal menetapkan peran:', e);
+          window.app.showToast(
+            '⚠️ Akun dibuat, tetapi perannya masih Viewer. Ubah manual lewat SQL Editor. (' + e.message + ')',
+            'warning'
+          );
+        }
+      }
+
       window.app.setLoading(btn, false);
       await loadUsers();
     }
