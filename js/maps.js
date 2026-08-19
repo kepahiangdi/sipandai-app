@@ -249,11 +249,10 @@ function openMapModal(data) {
 // 🎛️ UI EVENT LISTENERS
 // ==========================================
 function setupUIListeners() {
-  // Toggle Sidebar
-  document.getElementById('toggleSidebar')?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    document.querySelector('.sidebar')?.classList.toggle('open');
-  });
+  // Tombol ☰ ditangani terpusat di js/app.js (initUI).
+  // Handler duplikat di sini membuat kelas .open di-toggle DUA KALI dalam
+  // satu ketukan — terbuka lalu langsung tertutup — sehingga menu samping
+  // seolah tidak berfungsi di halaman peta saja.
 
   // Filter Panel
   const btnToggleFilters = document.getElementById('btnToggleFilters');
