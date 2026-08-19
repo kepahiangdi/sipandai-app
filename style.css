@@ -1,0 +1,136 @@
+/* css/style.css */
+:root {
+  --primary: #1e40af;
+  --primary-dark: #1e3a8a;
+  --secondary: #059669;
+  --accent: #f59e0b;
+  --danger: #dc2626;
+  --light: #f8fafc;
+  --dark: #0f172a;
+  --gray: #64748b;
+  --border: #e2e8f0;
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --radius: 8px;
+  --container: 1200px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  line-height: 1.6;
+  color: var(--dark);
+  background: #fff;
+}
+
+a { text-decoration: none; color: inherit; }
+img { max-width: 100%; height: auto; display: block; }
+ul { list-style: none; }
+
+/* Utility Classes */
+.text-center { text-align: center; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mb-4 { margin-bottom: 2rem; }
+.mt-2 { margin-top: 1rem; }
+.w-100 { width: 100%; }
+.d-none { display: none !important; }
+
+/* Container */
+.container {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Section Padding */
+section { padding: 4rem 1.5rem; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .navbar { flex-wrap: wrap; gap: 1rem; }
+  .hero h1 { font-size: 1.75rem; }
+  .features-grid { grid-template-columns: 1fr; }
+}
+/* Notification Dropdown */
+.notification-dropdown {
+  display: none;
+}
+
+.notification-dropdown.show {
+  display: block;
+}
+
+.notification-item {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.notification-item:hover {
+  background: #f8fafc;
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-item.critical {
+  border-left: 3px solid #dc2626;
+}
+
+.notification-item.warning {
+  border-left: 3px solid #f59e0b;
+}
+
+.notification-item.info {
+  border-left: 3px solid #3b82f6;
+}
+
+.notification-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-title {
+  font-weight: 600;
+  color: var(--dark);
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.notification-message {
+  color: var(--gray);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  margin-bottom: 0.25rem;
+}
+
+.notification-time {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.notification-empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--gray);
+}
+
+/* Badge animation */
+@keyframes pulse-badge {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+.notification-badge {
+  animation: pulse-badge 2s infinite;
+}
