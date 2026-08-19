@@ -19,6 +19,187 @@
   
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+  <!-- Gaya khusus fitur "Lapor dari Peta" -->
+  <style>
+    /* Jaring pengaman: halaman ini tidak boleh melebar ke samping */
+    html, body{ overflow-x:hidden; max-width:100%; }
+
+    /* Tombol mengambang */
+    .fab-report{
+      position:fixed; left:1rem; bottom:1.25rem; z-index:1100;
+      display:flex; align-items:center; gap:.4rem;
+      padding:.85rem 1.25rem; border:none; border-radius:999px;
+      background:#1e40af; color:#fff; font-size:.95rem; font-weight:600;
+      box-shadow:0 6px 18px rgba(30,64,175,.35); cursor:pointer;
+      transition:transform .15s ease, background .15s ease;
+    }
+    .fab-report:hover{ background:#1e3a8a; transform:translateY(-1px); }
+    .fab-report:active{ transform:translateY(0); }
+    .fab-plus{ font-size:1.25rem; line-height:1; }
+
+    /* Tombol disembunyikan saat panel terbuka atau saat sedang memilih titik,
+       supaya tidak menutupi formulir di layar ponsel. */
+    body.panel-lapor-terbuka .fab-report,
+    body.panel-lapor-terbuka .pending-chip,
+    body.map-picking .fab-report{ display:none; }
+
+    /* Penanda antrean offline */
+    .pending-chip{
+      position:fixed; left:1rem; bottom:5rem; z-index:1100;
+      padding:.5rem .9rem; border:1px solid #fcd34d; border-radius:999px;
+      background:#fef3c7; color:#92400e; font-size:.8rem; font-weight:600;
+      cursor:pointer; box-shadow:0 3px 10px rgba(0,0,0,.12);
+    }
+
+    /* Petunjuk mode pilih titik */
+    .pick-banner{
+      position:fixed; top:5rem; left:50%; transform:translateX(-50%); z-index:1001;
+      display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; justify-content:center;
+      max-width:min(92vw,640px);
+      padding:.7rem 1rem; border-radius:12px;
+      background:#0f172a; color:#fff; font-size:.9rem; font-weight:500;
+      box-shadow:0 8px 24px rgba(0,0,0,.28);
+    }
+    .pick-banner-actions{ display:flex; gap:.5rem; }
+    .btn-gps,.btn-cancel-pick{
+      padding:.4rem .75rem; border-radius:8px; font-size:.82rem;
+      font-weight:600; cursor:pointer; border:1px solid transparent;
+    }
+    .btn-gps{ background:#22c55e; color:#052e16; }
+    .btn-cancel-pick{ background:transparent; color:#cbd5e1; border-color:#475569; }
+
+    /* Kursor bidik saat memilih titik */
+    .map-picking .leaflet-container{ cursor:crosshair !important; }
+
+    /* Panel formulir */
+    /* Panel disembunyikan dengan display:none, BUKAN digeser ke luar layar.
+       Menggeser dengan transform membuat halaman melebar ke kanan; di ponsel
+       browser lalu mengecilkan skala dan tombol mengambang ikut terlempar
+       ke luar area yang terlihat. */
+    .report-panel{
+      position:fixed; top:0; right:0; z-index:1002;
+      width:min(420px,100vw); height:100%;
+      background:#fff; box-shadow:-8px 0 24px rgba(0,0,0,.18);
+      display:none; flex-direction:column;
+    }
+    .report-panel.open{ display:flex; animation:panelMuncul .2s ease-out; }
+
+    /* Animasi sengaja memakai opacity + scale, bukan geser dari luar layar.
+       Elemen yang untuk sesaat berada di luar tepi kanan tetap melebarkan
+       halaman dan mengacaukan tata letak di ponsel. */
+    @keyframes panelMuncul{
+      from{ opacity:0; transform:scale(.985); }
+      to  { opacity:1; transform:none; }
+    }
+
+    /* Panel filter bawaan halaman ini punya masalah yang sama:
+       .filter-panel diletakkan pada right:-320px sehingga menonjol
+       320px di luar tepi kanan. Di ponsel itu membuat seluruh halaman
+       mengecil. Di sini diperbaiki tanpa mengubah css/maps.css. */
+    .filter-panel{ right:12px !important; display:none; transition:none; }
+    .filter-panel.open{ display:block; animation:panelMuncul .2s ease-out; }
+    .report-panel .panel-header{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:1rem 1.25rem; border-bottom:1px solid #e2e8f0; flex-shrink:0;
+    }
+    .report-panel .panel-header h3{ margin:0; font-size:1.05rem; }
+    .report-panel .panel-close{
+      background:none; border:none; font-size:1.6rem; line-height:1;
+      color:#64748b; cursor:pointer;
+    }
+    .report-panel .panel-body{ padding:1.25rem; overflow-y:auto; flex:1; }
+
+    .report-backdrop{
+      position:fixed; inset:0; z-index:1001; background:rgba(15,23,42,.35);
+    }
+
+    /* Isian formulir */
+    .report-panel .form-group{ margin-bottom:1rem; }
+    .report-panel .form-group label{
+      display:block; margin-bottom:.35rem; font-size:.85rem; font-weight:600; color:#334155;
+    }
+    .report-panel .form-control{
+      width:100%; padding:.6rem .7rem; border:1px solid #cbd5e1;
+      border-radius:8px; font-size:.9rem; font-family:inherit; background:#fff;
+    }
+    .report-panel .form-control:focus{ outline:2px solid #bfdbfe; border-color:#1e40af; }
+    .report-panel .form-control:disabled{ background:#f1f5f9; color:#64748b; }
+    .form-row{ display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
+    .required{ color:#dc2626; }
+    .hint{ font-size:.78rem; color:#64748b; margin:.25rem 0 0; }
+
+    .coord-box{
+      display:flex; align-items:center; justify-content:space-between; gap:.75rem;
+      padding:.7rem .8rem; margin-bottom:.35rem;
+      background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px;
+    }
+    .coord-label{ display:block; font-size:.75rem; color:#1e40af; font-weight:600; }
+    .coord-box strong{ font-size:.9rem; color:#0f172a; }
+    .btn-repick{
+      background:#fff; border:1px solid #1e40af; color:#1e40af;
+      padding:.35rem .6rem; border-radius:8px; font-size:.78rem;
+      font-weight:600; cursor:pointer; white-space:nowrap;
+    }
+
+    .photo-actions{ display:flex; gap:.5rem; }
+    .btn-photo{
+      flex:1; padding:.6rem; border:1px dashed #94a3b8; border-radius:8px;
+      background:#f8fafc; color:#334155; font-size:.85rem; font-weight:600; cursor:pointer;
+    }
+    .btn-photo:hover{ border-color:#1e40af; color:#1e40af; }
+    .photo-preview{ margin-top:.6rem; }
+    .photo-preview img{
+      width:100%; max-height:190px; object-fit:cover;
+      border-radius:8px; border:1px solid #e2e8f0;
+    }
+    .photo-preview .photo-meta{
+      display:flex; align-items:center; justify-content:space-between;
+      margin-top:.35rem; font-size:.78rem; color:#64748b;
+    }
+    .photo-preview button{
+      background:none; border:none; color:#b91c1c;
+      font-size:.78rem; font-weight:600; cursor:pointer;
+    }
+
+    .panel-actions{ padding-top:.25rem; }
+    .offline-note{ text-align:center; }
+
+    /* .btn-primary bawaan components.css berlatar putih (dirancang untuk
+       bagian hero di halaman depan). Di dalam panel ini dibuat solid biru
+       agar terbaca jelas sebagai tombol utama. */
+    .report-panel .btn-primary{
+      width:100%; display:block;
+      background:#1e40af; color:#fff !important;
+      border:none; border-radius:10px;
+      padding:.85rem 1rem; font-size:.95rem; font-weight:700;
+      font-family:inherit; cursor:pointer; transition:background .15s ease;
+    }
+    .report-panel .btn-primary:hover{ background:#1e3a8a; transform:none; }
+    .report-panel .btn-primary:disabled{ background:#94a3b8; cursor:progress; }
+
+    /* Ponsel: panel naik dari bawah */
+    @media (max-width:640px){
+      .report-panel{
+        top:auto; bottom:0; left:0; width:100%; height:88vh;
+        border-radius:16px 16px 0 0;
+      }
+      .report-panel.open{ animation:panelMuncul .2s ease-out; }
+      .filter-panel{ right:10px !important; }
+      .form-row{ grid-template-columns:1fr; }
+
+      /* Tombol tetap di kiri bawah; legenda peta menempati sisi kanan bawah.
+         Label dipendekkan jadi "+ Lapor" agar keduanya muat berdampingan. */
+      .fab-report{ padding:.75rem 1.1rem; font-size:.9rem; }
+      .fab-long{ display:none; }
+      .pending-chip{ bottom:4.75rem; font-size:.75rem; padding:.45rem .75rem; }
+
+      /* Legenda dinaikkan supaya tidak menutupi tombol pada layar sempit */
+      .map-legend{ bottom:5.5rem !important; }
+
+      .pick-banner{ top:4.5rem; font-size:.85rem; padding:.6rem .85rem; }
+    }
+  </style>
 </head>
 <body class="dashboard-layout">
 
@@ -68,6 +249,124 @@
   </div>
   <!-- Legend & Filter Panel juga bisa diletakkan di sini atau di luar, CSS sudah mengikatnya -->
 </div>
+
+    <!-- ============================================================
+         LAPOR DARI PETA
+         ============================================================ -->
+
+    <!-- Petunjuk saat mode pilih titik aktif -->
+    <div id="pickBanner" class="pick-banner d-none">
+      <span id="pickBannerText">👆 Ketuk titik lokasi kejadian di peta</span>
+      <div class="pick-banner-actions">
+        <button type="button" id="btnUseGps" class="btn-gps">📡 Pakai GPS</button>
+        <button type="button" id="btnCancelPick" class="btn-cancel-pick">Batal</button>
+      </div>
+    </div>
+
+    <!-- Tombol mengambang -->
+    <button type="button" id="btnStartReport" class="fab-report" data-role="admin_kesbangpol,operator_kec">
+      <span class="fab-plus">+</span> Lapor<span class="fab-long">&nbsp;di Sini</span>
+    </button>
+
+    <!-- Penanda jumlah laporan tertunda (mode offline) -->
+    <button type="button" id="btnPendingQueue" class="pending-chip d-none" title="Laporan menunggu terkirim">
+      📦 <span id="pendingQueueCount">0</span> menunggu kirim
+    </button>
+
+    <!-- Panel formulir -->
+    <aside id="reportPanel" class="report-panel">
+      <div class="panel-header">
+        <h3>📝 Laporan Baru</h3>
+        <button type="button" id="closeReportPanel" class="panel-close">&times;</button>
+      </div>
+
+      <form id="formMapReport" class="panel-body">
+
+        <div class="coord-box">
+          <div>
+            <span class="coord-label">Titik kejadian</span>
+            <strong id="coordText">-</strong>
+          </div>
+          <button type="button" id="btnRepickPoint" class="btn-repick">Ubah titik</button>
+        </div>
+        <p class="hint" id="gpsAccuracy"></p>
+
+        <div class="form-group">
+          <label>Judul / Perihal Kejadian <span class="required">*</span></label>
+          <input type="text" id="mrJudul" class="form-control" required
+                 placeholder="Contoh: Sengketa batas lahan warga">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Kategori</label>
+            <select id="mrKategori" class="form-control">
+              <option value="SARA">SARA / Sosial</option>
+              <option value="Ekonomi">Ekonomi / Agraria</option>
+              <option value="Politik">Politik / Pilkada</option>
+              <option value="Bencana">Bencana Alam</option>
+              <option value="Lainnya" selected>Lainnya</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Tingkat Risiko</label>
+            <select id="mrRisiko" class="form-control">
+              <option value="Rendah">🟢 Rendah</option>
+              <option value="Sedang" selected>🟡 Sedang</option>
+              <option value="Tinggi">🔴 Tinggi</option>
+              <option value="Kritis">🚨 Kritis</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Kecamatan <span class="required">*</span></label>
+            <select id="mrKecamatan" class="form-control" required>
+              <option value="">Memuat…</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Desa / Kelurahan <span class="required">*</span></label>
+            <select id="mrDesa" class="form-control" required disabled>
+              <option value="">Pilih Kecamatan Dulu</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Patokan Lokasi</label>
+          <input type="text" id="mrAlamat" class="form-control"
+                 placeholder="Contoh: belakang balai desa, dekat jembatan">
+        </div>
+
+        <div class="form-group">
+          <label>Deskripsi Kejadian <span class="required">*</span></label>
+          <textarea id="mrDeskripsi" class="form-control" rows="3" required
+                    placeholder="Kronologi singkat, pihak yang terlibat, dampak awal…"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Foto Bukti</label>
+          <div class="photo-actions">
+            <button type="button" id="btnTakePhoto" class="btn-photo">📷 Ambil Foto</button>
+            <button type="button" id="btnPickPhoto" class="btn-photo">🖼️ Dari Galeri</button>
+          </div>
+          <input type="file" id="mrKamera"  accept="image/*" capture="environment" hidden>
+          <input type="file" id="mrGaleri"  accept="image/*" hidden>
+          <div id="mrPreview" class="photo-preview"></div>
+        </div>
+
+        <div class="panel-actions">
+          <button type="submit" id="btnSubmitMapReport" class="btn-primary w-100">📤 Kirim Laporan</button>
+          <p class="hint offline-note" id="offlineNote">
+            Tanpa sinyal, laporan tersimpan di perangkat dan terkirim otomatis saat internet kembali.
+          </p>
+        </div>
+      </form>
+    </aside>
+
+    <div id="reportBackdrop" class="report-backdrop d-none"></div>
 
     <!-- Filter Panel (Slide-over) -->
 <!-- Filter Panel -->
@@ -155,5 +454,6 @@
   <script src="js/config.js"></script>
   <script src="js/app.js"></script>
   <script src="js/maps.js"></script>
+  <script src="js/map-report.js"></script>
 </body>
 </html>
