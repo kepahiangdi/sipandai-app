@@ -15,8 +15,11 @@
 //    Anon key memang aman untuk publik SELAMA Row Level Security aktif
 //    (sudah diatur oleh supabase/02_rls.sql).
 // =====================================================================
-const SUPABASE_URL = 'https://GANTI-DENGAN-PROJECT-REF-ANDA.supabase.co';
-const SUPABASE_ANON_KEY = 'GANTI-DENGAN-ANON-KEY-PROJECT-BARU';
+// ⚠️ URL ditulis TANPA "/rest/v1/" di belakangnya.
+//    Halaman Data API di dashboard menampilkan alamat lengkap
+//    (…supabase.co/rest/v1/), tapi supabase-js hanya butuh pangkalnya.
+const SUPABASE_URL = 'https://ykzmbjfsrlytctsphxtw.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlrem1iamZzcmx5dGN0c3BoeHR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxMzI0NDgsImV4cCI6MjEwMjcwODQ0OH0.8ERb_4FeSCcD5cqwYDjfG1QekjIlv2Ku3H0XoxJiymE';
 
 // 📦 Konstanta Aplikasi
 const APP_CONFIG = {
