@@ -44,6 +44,11 @@
     body.panel-lapor-terbuka .pending-chip,
     body.map-picking .fab-report{ display:none; }
 
+    /* Ikut disembunyikan saat menu samping dibuka, agar tidak menimpa
+       tombol "Keluar" di dasar menu pada layar ponsel. */
+    .sidebar.open ~ .main-content .fab-report,
+    .sidebar.open ~ .main-content .pending-chip{ display:none; }
+
     /* Penanda antrean offline */
     .pending-chip{
       position:fixed; left:1rem; bottom:5rem; z-index:1100;
