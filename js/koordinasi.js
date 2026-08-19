@@ -60,8 +60,13 @@ async function fetchKoordinasiData(filters = {}) {
     if (filters.status) query = query.eq('status', filters.status);
     if (filters.jenis) query = query.eq('jenis_kegiatan', filters.jenis);
     
+    // Operator melihat kegiatan kecamatannya SENDIRI + kegiatan tingkat
+    // kabupaten (kecamatan_id kosong / "Semua Kecamatan").
+    // Sebelumnya memakai .eq() saja, sehingga baris ber-kecamatan_id NULL
+    // ikut tersaring keluar — rapat kabupaten yang dibuat admin tidak
+    // pernah muncul di layar operator.
     if (user.role === 'operator_kec' && user.kecamatan_id) {
-      query = query.eq('kecamatan_id', user.kecamatan_id);
+      query = query.or(`kecamatan_id.eq.${parseInt(user.kecamatan_id)},kecamatan_id.is.null`);
     }
     
     const { data, error, count } = await query;
@@ -86,6 +91,9 @@ async function fetchKoordinasiData(filters = {}) {
 function showLoadingState() {
   const tbody = document.getElementById('tableKoordinasi');
   if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="text-center">⏳ Memuat data...</td></tr>';
+
+  const list = document.getElementById('forumList');
+  if (list) list.innerHTML = '<div style="padding:1.5rem;text-align:center;color:var(--gray)">⏳ Memuat data…</div>';
   
   ['statTotal', 'statBerjalan', 'statSelesai'].forEach(id => {
     const el = document.getElementById(id);
@@ -123,36 +131,111 @@ function animateValue(id, start, end, duration) {
 // 📋 RENDER TABLE
 // ==========================================
 function renderTable(data) {
+  // Halaman ini memakai daftar kartu (#forumList), bukan tabel.
+  // Fungsi render-nya dulu menyasar #tableKoordinasi yang tidak pernah ada
+  // di koordinasi.html, sehingga daftar diskusi selalu tampak kosong.
+  const list  = document.getElementById('forumList');
   const tbody = document.getElementById('tableKoordinasi');
-  if (!tbody) return;
-  
+
+  if (tbody) renderTableRows(tbody, data);
+  if (list)  renderForumList(list, data);
+}
+
+const IKON_JENIS = {
+  'Rapat Koordinasi': '🤝',
+  'Monitoring': '🔍',
+  'Sosialisasi': '📢',
+  'Gladi Resik': '🎯',
+  'Lainnya': '📌'
+};
+
+function escapeHtml(t) {
+  return (t ?? '').toString().replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
+function renderForumList(container, data) {
+  container.innerHTML = '';
+
+  if (!data || data.length === 0) {
+    container.innerHTML = `
+      <div style="padding:2rem;text-align:center;color:var(--gray)">
+        <div style="font-size:2rem;margin-bottom:.5rem">💬</div>
+        <p style="margin:0">Belum ada kegiatan koordinasi.</p>
+        <p style="margin:.25rem 0 0;font-size:.85rem">
+          Tekan <strong>+ Buat Diskusi Baru</strong> untuk menambahkan.
+        </p>
+      </div>`;
+    return;
+  }
+
+  data.forEach(item => {
+    const cakupan = item.kecamatan?.nama
+      ? `📍 ${escapeHtml(item.kecamatan.nama)}`
+      : '🗺️ Semua Kecamatan';
+
+    const jmlPeserta = item.peserta
+      ? `👥 ${item.peserta.split(',').filter(x => x.trim()).length} orang`
+      : '';
+
+    const div = document.createElement('div');
+    div.className = 'forum-item';
+    div.innerHTML = `
+      <div class="forum-avatar">${IKON_JENIS[item.jenis_kegiatan] || '📌'}</div>
+      <div class="forum-content">
+        <div class="forum-title">${escapeHtml(item.judul)}</div>
+        <div class="forum-meta">
+          <span>📅 ${window.app.formatDate(item.tanggal)}</span>
+          <span>${cakupan}</span>
+          ${item.lokasi ? `<span>🏛️ ${escapeHtml(item.lokasi)}</span>` : ''}
+          ${jmlPeserta ? `<span>${jmlPeserta}</span>` : ''}
+        </div>
+        ${item.tindak_lanjut ? `
+          <div style="margin-top:.5rem;font-size:.82rem;color:#334155;
+                      background:#eff6ff;border-radius:6px;padding:.4rem .6rem">
+            ✅ <strong>Tindak lanjut:</strong> ${escapeHtml(item.tindak_lanjut)}
+          </div>` : ''}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.4rem;flex-shrink:0">
+        <span class="status-badge ${getStatusClass(item.status)}">${formatStatus(item.status)}</span>
+        <div style="display:flex;gap:.25rem">
+          <button class="btn-action" title="Detail">👁️</button>
+          ${canEditKoordinasi(item) ? `<button class="btn-action" title="Edit">✏️</button>` : ''}
+          ${canEditKoordinasi(item) && item.status !== 'selesai'
+            ? `<button class="btn-action" title="Tandai selesai">✓</button>` : ''}
+        </div>
+      </div>`;
+
+    const tombol = div.querySelectorAll('.btn-action');
+    tombol[0].addEventListener('click', (e) => { e.stopPropagation(); window.viewDetail(item.id); });
+    if (tombol[1]) tombol[1].addEventListener('click', (e) => { e.stopPropagation(); window.editKoordinasi(item.id); });
+    if (tombol[2]) tombol[2].addEventListener('click', (e) => { e.stopPropagation(); window.markAsDone(item.id); });
+    div.addEventListener('click', () => window.viewDetail(item.id));
+
+    container.appendChild(div);
+  });
+}
+
+function renderTableRows(tbody, data) {
   tbody.innerHTML = '';
-  
+
   if (!data || data.length === 0) {
     tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Belum ada data koordinasi.</td></tr>';
     return;
   }
-  
-  const currentUser = JSON.parse(localStorage.getItem('sipandai_user') || '{}');
-  
+
   data.forEach(item => {
-    let pelaporName = 'Unknown';
-    if (item.created_by === currentUser.id) {
-      pelaporName = currentUser.nama || 'Saya';
-    } else {
-      pelaporName = item.created_by ? 'User ' + item.created_by.slice(0, 8) + '...' : '-';
-    }
-    
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><strong>#${item.id}</strong></td>
       <td>${window.app.formatDate(item.tanggal)}</td>
       <td>
-        <strong>${item.judul}</strong><br>
-        <small class="text-muted">${item.jenis_kegiatan || '-'}</small>
+        <strong>${escapeHtml(item.judul)}</strong><br>
+        <small class="text-muted">${escapeHtml(item.jenis_kegiatan) || '-'}</small>
       </td>
-      <td>${item.lokasi || '-'}</td>
-      <td>${item.kecamatan?.nama || '-'}</td>
+      <td>${escapeHtml(item.lokasi) || '-'}</td>
+      <td>${item.kecamatan?.nama ? escapeHtml(item.kecamatan.nama) : '<em style="color:#64748b">Semua Kecamatan</em>'}</td>
       <td>${item.peserta ? item.peserta.split(',').length + ' orang' : '-'}</td>
       <td><span class="status-badge ${getStatusClass(item.status)}">${formatStatus(item.status)}</span></td>
       <td>
@@ -222,12 +305,12 @@ function renderTrackingTable(data) {
         <strong>${item.judul}</strong><br>
         <small class="text-muted">${item.jenis_kegiatan || '-'}</small>
       </td>
-      <td>${item.peserta || item.kecamatan?.nama || '-'}</td>
+      <td>${item.peserta || item.kecamatan?.nama || 'Semua Kecamatan'}</td>
       <td>${deadlineText}</td>
       <td><span class="status-badge ${statusClass}">${statusText}</span></td>
       <td>
         <button class="btn-action" onclick="viewDetail(${item.id})">👁️ Detail</button>
-        ${item.status !== 'selesai' ? `<button class="btn-action" onclick="markAsDone(${item.id})">✓ Selesai</button>` : ''}
+        ${item.status !== 'selesai' && canEditKoordinasi(item) ? `<button class="btn-action" onclick="markAsDone(${item.id})">✓ Selesai</button>` : ''}
       </td>
     `;
     tbody.appendChild(tr);
