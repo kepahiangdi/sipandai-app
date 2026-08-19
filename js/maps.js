@@ -61,7 +61,12 @@ function initMap() {
   }).addTo(map);
 
   markersLayer = L.featureGroup().addTo(map);
-  
+
+  // Dibagikan ke js/map-report.js (fitur "Lapor di Sini")
+  window.sipandaiMap = map;
+  window.reloadMapMarkers = loadMarkersFromSupabase;
+  document.dispatchEvent(new CustomEvent('sipandai:map-ready', { detail: { map } }));
+
   // Load data dengan error handling
   loadMarkersFromSupabase();
 }
