@@ -91,29 +91,68 @@ header {
   flex-wrap: wrap;
 }
 
+/* -------------------------------------------------------------------
+   TOMBOL
+   Sebelumnya .btn-primary & .btn-outline dibuat putih karena hanya
+   dipakai di hero halaman depan yang berlatar gelap. Padahal keduanya
+   juga dipakai di kartu & panel berlatar putih pada halaman dalam,
+   sehingga tulisannya tidak terbaca (mis. tombol "Load Arsip").
+   Sekarang gaya bakunya untuk latar TERANG; versi putih dipakai
+   khusus di dalam .hero.
+   ------------------------------------------------------------------- */
 .btn-primary {
-  background: #fff;
-  color: var(--primary) !important;
+  background: var(--primary);
+  color: #fff !important;
+  border: none;
   padding: 0.75rem 1.5rem;
   border-radius: var(--radius);
   font-weight: 600;
+  font-family: inherit;
+  font-size: 0.95rem;
   display: inline-block;
-  transition: transform 0.2s;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
 }
 
-.btn-primary:hover { transform: translateY(-2px); }
+.btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); }
 
 .btn-outline {
   background: transparent;
-  color: #fff !important;
+  color: var(--primary) !important;
   padding: 0.75rem 1.5rem;
   border-radius: var(--radius);
-  border: 2px solid rgba(255,255,255,0.6);
+  border: 2px solid var(--primary);
   font-weight: 600;
+  font-family: inherit;
+  font-size: 0.95rem;
+  display: inline-block;
+  cursor: pointer;
   transition: background 0.2s;
 }
 
-.btn-outline:hover { background: rgba(255,255,255,0.1); }
+.btn-outline:hover { background: rgba(30, 64, 175, 0.08); }
+
+.btn-secondary {
+  background: #f1f5f9;
+  color: #334155 !important;
+  border: 1px solid var(--border);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-family: inherit;
+  font-size: 0.95rem;
+  display: inline-block;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-secondary:hover { background: #e2e8f0; }
+
+/* Versi untuk latar GELAP (hero halaman depan) */
+.hero .btn-primary { background: #fff; color: var(--primary) !important; }
+.hero .btn-primary:hover { background: #f1f5f9; }
+.hero .btn-outline { color: #fff !important; border-color: rgba(255,255,255,0.6); }
+.hero .btn-outline:hover { background: rgba(255,255,255,0.1); }
 
 /* Features */
 .features { background: var(--light); }
