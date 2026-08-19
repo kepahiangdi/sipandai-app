@@ -136,6 +136,8 @@ karena Supabase butuh origin http/https).
 | `laporan.html` | Dropdown kecamatan terisi 8 item; pilih kecamatan → dropdown desa ikut terisi |
 | `laporan.html` | Kirim satu laporan uji + lampiran foto → muncul di tabel |
 | `peta.html` | Marker laporan uji tadi muncul di peta |
+| `peta.html` | Tekan "+ Lapor di Sini" → ketuk peta → isi formulir → terkirim |
+| `peta.html` | Matikan data seluler, kirim satu laporan → muncul penanda "menunggu kirim"; nyalakan lagi → terkirim sendiri |
 | `koordinasi.html` | Buat satu kegiatan, ubah statusnya jadi Selesai |
 | `users.html` | Buat operator kecamatan → **admin tetap login sebagai admin** |
 | `profil.html` | Upload foto profil, ganti password |
