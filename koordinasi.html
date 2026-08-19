@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="robots" content="noindex, nofollow"/>
+  <title>Koordinasi Lintas Sektor - SIPANDAI Kepahiang</title>
+  
+  <link rel="icon" type="image/x-icon" href="assets/icons/favicon.ico">
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/koordinasi.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <img src="assets/img/logo-kepahiang.jpg" alt="Logo">
+      <span>SIPANDAI</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+      <a href="laporan.html" class="nav-link">📝 Pelaporan</a>
+      <a href="peta.html" class="nav-link">🗺️ Peta Konflik</a>
+      <a href="koordinasi.html" class="nav-link active">🤝 Koordinasi</a>
+      <a href="profil.html" class="nav-link">👤 Profil & SOP</a>
+      <a href="users.html" class="nav-link">👥 Kelola User</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button id="btnLogout" class="btn-logout">🚪 Keluar</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button id="toggleSidebar" class="btn-icon mobile-only">☰</button>
+        <h1>Koordinasi Lintas Sektor & Tracking</h1>
+      </div>
+      <div class="topbar-right">
+        <div class="user-profile">
+          <img src="assets/icons/avatar.png" alt="Avatar" class="avatar" id="globalAvatar">
+          <span id="userName">Operator Kesbangpol</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="content-wrapper">
+      
+      <!-- Forum Diskusi -->
+      <section class="card forum-card">
+        <div class="card-header">
+          <h2>💬 Forum Koordinasi Internal</h2>
+          <!-- ✅ TOMBOL BUAT DISKUSI BARU (DIKEMBALIKAN) -->
+          <button id="btnNewDiscussion" class="btn-primary btn-sm">
+            ➕ Buat Diskusi Baru
+          </button>
+        </div>
+        
+        <!-- ✅ FORM SECTION DIPINDAH KE SINI (di luar card-header) -->
+        <div id="formSection" class="form-input-section" style="display:none; margin: 1rem; padding: 1rem; background: #f8fafc; border-radius: var(--radius); border: 1px solid var(--border);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+            <h3 style="margin:0; font-size:1.1rem;">📝 Input Koordinasi Baru</h3>
+            <button type="button" id="btnCloseForm" class="btn-icon" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+          </div>
+          
+          <form id="formKoordinasi" class="report-form">
+            <div class="form-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:1rem;">
+              <div class="form-group full-width">
+                <label>Judul Diskusi *</label>
+                <input type="text" id="koordinasiJudul" name="judul" class="form-control" required placeholder="Contoh: Koordinasi Pengamanan Pilkada">
+              </div>
+              
+              <div class="form-group">
+                <label>Jenis Kegiatan</label>
+                <select id="koordinasiJenis" name="jenis_kegiatan" class="form-control">
+                  <option value="">Pilih Jenis</option>
+                  <option value="Rapat Koordinasi">Rapat Koordinasi</option>
+                  <option value="Monitoring">Monitoring Lapangan</option>
+                  <option value="Sosialisasi">Sosialisasi</option>
+                  <option value="Gladi Resik">Gladi Resik</option>
+                  <option value="Lainnya">Lainnya</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Tanggal & Waktu *</label>
+                <input type="datetime-local" id="koordinasiTanggal" name="tanggal" class="form-control" required>
+              </div>
+              
+              <div class="form-group">
+                <label>Kecamatan</label>
+                <select id="koordinasiKecamatan" name="kecamatan_id" class="form-control">
+                  <option value="">Semua Kecamatan</option>
+                  <!-- Diisi otomatis oleh JS -->
+                </select>
+              </div>
+              
+              <div class="form-group full-width">
+                <label>Lokasi Kegiatan</label>
+                <input type="text" id="koordinasiLokasi" name="lokasi" class="form-control" placeholder="Contoh: Aula Kantor Bupati">
+              </div>
+              
+              <div class="form-group full-width">
+                <label>Peserta / Stakeholder</label>
+                <input type="text" id="koordinasiPeserta" name="peserta" class="form-control" placeholder="Contoh: Forkopimda, Camat, Kapolsek">
+              </div>
+              
+              <div class="form-group full-width">
+                <label>Notulensi / Catatan</label>
+                <textarea id="koordinasiNotulensi" name="notulensi" class="form-control" rows="3" placeholder="Ringkasan pembahasan..."></textarea>
+              </div>
+              
+              <div class="form-group full-width">
+                <label>Tindak Lanjut</label>
+                <textarea id="koordinasiTindakLanjut" name="tindak_lanjut" class="form-control" rows="2" placeholder="Rencana aksi selanjutnya..."></textarea>
+              </div>
+              
+              <div class="form-group">
+                <label>Status</label>
+                <select id="koordinasiStatus" name="status" class="form-control">
+                  <option value="rencana">📅 Rencana</option>
+                  <option value="berjalan" selected>🔄 Berjalan</option>
+                  <option value="selesai">✅ Selesai</option>
+                  <option value="ditunda">⏸️ Ditunda</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="form-actions" style="margin-top:1rem; display:flex; gap:0.5rem; justify-content:flex-end;">
+              <button type="button" id="btnReset" class="btn-secondary">🔄 Reset</button>
+              <button type="submit" id="btnSubmitKoordinasi" class="btn-primary">📤 Simpan Koordinasi</button>
+            </div>
+          </form>
+        </div>
+        
+        <!-- List Diskusi (akan diisi via JS) -->
+        <div class="forum-list" id="forumList">
+          <div class="forum-empty">⏳ Memuat diskusi koordinasi...</div>
+        </div>
+      </section>
+
+<!-- Tracking Tindak Lanjut -->
+<section class="card tracking-card">
+  <div class="card-header">
+    <h2>📋 Tracking Tindak Lanjut Laporan</h2>
+    <button id="btnRefreshTracking" class="btn-refresh">🔄 Refresh</button>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID Laporan</th>
+          <th>Judul</th>
+          <th>PIC / Stakeholder</th>
+          <th>Batas Waktu</th>
+          <th>Status</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="trackingTable">
+        <tr><td colspan="6" class="text-center">Memuat data tracking...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+<!-- 🗄️ Arsip Diskusi Selesai -->
+<section class="card archive-card">
+  <div class="card-header">
+    <h2>🗄️ Arsip Diskusi Selesai</h2>
+    <button id="btnLoadArchive" class="btn-outline btn-sm">🔄 Load Arsip</button>
+  </div>
+  <div class="archive-list" id="archiveList">
+    <div class="archive-empty">Klik "Load Arsip" untuk melihat diskusi yang sudah selesai.</div>
+  </div>
+</section>
+      <!-- Directory Stakeholder -->
+      <section class="card stakeholder-card">
+        <div class="card-header">
+          <h2>👥 Daftar Kontak Stakeholder</h2>
+        </div>
+        <div class="stakeholder-grid" id="stakeholderGrid">
+          <!-- Cards injected via JS -->
+          <div class="stakeholder-empty">Memuat kontak stakeholder...</div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Modal Detail (untuk view item) -->
+  <div id="modalDetail" class="modal-overlay d-none">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalTitle">📄 Detail Koordinasi</h3>
+        <button class="modal-close" id="closeModal">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <!-- Diisi dinamis via JS -->
+      </div>
+      <div class="modal-footer">
+        <div id="modalEditSection" class="d-none" style="margin-right:auto;">
+          <button class="btn-primary btn-sm" onclick="editKoordinasi(document.getElementById('editKoordinasiId').value)">✏️ Edit</button>
+          <input type="hidden" id="editKoordinasiId">
+        </div>
+        <button class="btn-secondary" id="closeModalBtn">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/koordinasi.js"></script>
+  <script src="js/users.js"></script>
+</body>
+</html>

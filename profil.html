@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="robots" content="noindex, nofollow"/>
+  <title>Profil & SOP - SIPANDAI Kepahiang</title>
+  
+  <link rel="icon" type="image/x-icon" href="assets/icons/favicon.ico">
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/profil.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <img src="assets/img/logo-kepahiang.jpg" alt="Logo">
+      <span>SIPANDAI</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+      <a href="laporan.html" class="nav-link">📝 Pelaporan</a>
+      <a href="peta.html" class="nav-link">🗺️ Peta Konflik</a>
+      <a href="koordinasi.html" class="nav-link">🤝 Koordinasi</a>
+      <a href="profil.html" class="nav-link active">👤 Profil & SOP</a>
+      <a href="users.html" class="nav-link">👥 Kelola User</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button id="btnLogout" class="btn-logout">🚪 Keluar</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button id="toggleSidebar" class="btn-icon mobile-only">☰</button>
+        <h1>Profil Akun & Panduan Sistem</h1>
+      </div>
+<!-- Ganti bagian avatar-section yang lama dengan ini -->
+<div class="avatar-section">
+  <div class="avatar-wrapper">
+    <img src="assets/icons/avatar.png" alt="Avatar" class="avatar" id="globalAvatar">
+    <div class="avatar-overlay">
+      <label for="uploadFoto" class="upload-btn">
+        📷 Ganti Foto
+      </label>
+      <input type="file" id="uploadFoto" accept="image/*" style="display:none">
+    </div>
+  </div>
+  <div id="uploadProgress" class="upload-progress d-none">
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <small id="progressText">Mengupload...</small>
+  </div>
+  <small class="text-muted">Maks. 2MB (JPG, PNG)</small>
+</div>
+    </header>
+
+    <div class="content-wrapper">
+      
+      <!-- Info Profil -->
+      <section class="card profile-card">
+        <div class="card-header">
+          <h2>👤 Informasi Akun</h2>
+        </div>
+        <div class="profile-grid">
+<div class="avatar-section">
+  <div class="avatar-wrapper">
+    <img src="assets/icons/avatar.png" alt="Avatar" class="profile-avatar" id="profileAvatar">
+    <div class="avatar-overlay">
+      <label for="uploadFoto" class="upload-btn">📷 Ganti</label>
+      <input type="file" id="uploadFoto" accept="image/*" style="display:none">
+    </div>
+  </div>
+  <div id="uploadProgress" class="upload-progress d-none">
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <small id="progressText">Mengupload...</small>
+  </div>
+  <small class="text-muted">Maks. 2MB (JPG, PNG)</small>
+</div>
+          <div class="profile-details">
+            <div class="detail-row"><span class="label">Nama Lengkap</span><span class="value" id="profileNama">-</span></div>
+            <div class="detail-row"><span class="label">Email</span><span class="value" id="profileEmail">-</span></div>
+            <div class="detail-row"><span class="label">Role / Jabatan</span><span class="value" id="profileRole">-</span></div>
+            <div class="detail-row"><span class="label">Wilayah Tugas</span><span class="value" id="profileWilayah">-</span></div>
+            <div class="detail-row"><span class="label">Bergabung Sejak</span><span class="value" id="profileJoin">-</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Ganti Password -->
+      <section class="card security-card">
+        <div class="card-header">
+          <h2>🔐 Keamanan Akun</h2>
+        </div>
+        <form id="formPassword" class="password-form">
+          <div class="form-group">
+            <label>Password Lama</label>
+            <input type="password" id="oldPass" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>Password Baru</label>
+            <input type="password" id="newPass" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>Konfirmasi Password</label>
+            <input type="password" id="confirmPass" class="form-control" required>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">💾 Simpan Password</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- SOP & Panduan -->
+      <section class="card sop-card">
+        <div class="card-header">
+          <h2>📜 SOP & Panduan Penggunaan</h2>
+        </div>
+        <div class="sop-list">
+          <a href="assets/docs/SOP_Deteksi_Dini.pdf" target="_blank" class="sop-item">
+            <span class="sop-icon">📄</span>
+            <div class="sop-info">
+              <strong>SOP Deteksi Dini Konflik Sosial</strong>
+              <small>Permen Dalam Negeri No. 2/2018 & Perubahannya</small>
+            </div>
+            <span class="sop-action">⬇️ Unduh</span>
+          </a>
+          <a href="assets/docs/Pedoman_Pelaporan_SIPANDAI.pdf" target="_blank" class="sop-item">
+            <span class="sop-icon">📘</span>
+            <div class="sop-info">
+              <strong>Pedoman Input Laporan SIPANDAI</strong>
+              <small>Tata cara pelaporan, kategori, & tingkat risiko</small>
+            </div>
+            <span class="sop-action">⬇️ Unduh</span>
+          </a>
+          <a href="assets/docs/Panduan_Koordinasi.pdf" target="_blank" class="sop-item">
+            <span class="sop-icon">🤝</span>
+            <div class="sop-info">
+              <strong>Panduan Koordinasi Lintas Sektor</strong>
+              <small>Alur penanganan & pelaporan ke Forkopimda</small>
+            </div>
+            <span class="sop-action">⬇️ Unduh</span>
+          </a>
+        </div>
+      </section>
+
+      <!-- FAQ & Helpdesk -->
+      <section class="card faq-card">
+        <div class="card-header">
+          <h2>❓ FAQ & Bantuan Teknis</h2>
+        </div>
+        <div class="faq-accordion">
+          <details>
+            <summary>Bagaimana cara mengisi laporan konflik?</summary>
+            <p>Masuk ke menu <strong>Pelaporan</strong>, isi form sesuai lokasi & kategori, lampirkan bukti foto, lalu klik <em>Kirim Laporan</em>.</p>
+          </details>
+          <details>
+            <summary>Kenapa peta tidak muncul di HP saya?</summary>
+            <p>Pastikan koneksi internet stabil dan browser Anda mengizinkan akses lokasi. Refresh halaman atau gunakan mode desktop.</p>
+          </details>
+          <details>
+            <summary>Siapa yang bisa mengakses data konflik?</summary>
+            <p>Akses dibatasi oleh role: Admin melihat seluruh data, Operator Kecamatan hanya melihat wilayah tugasnya, Viewer hanya dashboard publik.</p>
+          </details>
+          <details>
+            <summary>Bagaimana cara lapor bug atau minta fitur?</summary>
+            <p>Hubungi Admin IT Kesbangpol via email <code>it-support@kepahiangkab.go.id</code> atau WhatsApp resmi dinas.</p>
+          </details>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/profil.js"></script>
+  <script src="js/users.js"></script>
+</body>
+</html>

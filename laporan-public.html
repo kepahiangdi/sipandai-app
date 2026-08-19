@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lapor Konflik - SIPANDAI Kepahiang</title>
+  <link rel="icon" type="image/x-icon" href="assets/icons/favicon.ico">
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { background: #f8fafc; font-family: 'Inter', sans-serif; padding: 2rem; }
+    .public-form { max-width: 600px; margin: 0 auto; background: #fff; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+    .form-control { width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; }
+    .btn-primary { background: #1e40af; color: #fff; padding: 0.75rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    .btn-primary:hover { background: #1e3a8a; }
+    .alert { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+    .alert-success { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+    .alert-warning { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+    .hint { font-size: 0.85rem; color: #64748b; margin-top: 0.25rem; }
+    .required { color: #dc2626; }
+  </style>
+</head>
+<body>
+  <div class="public-form">
+    <div style="text-align:center;margin-bottom:2rem">
+      <img src="assets/img/logo-kepahiang.jpg" alt="Logo" style="height:50px;margin-bottom:1rem">
+      <h2 style="margin:0;color:#1e293b">📝 Lapor Potensi Konflik</h2>
+      <p style="color:#64748b;margin:0.5rem 0 0">Badan Kesbangpol Kabupaten Kepahiang</p>
+    </div>
+
+    <div id="successMessage" class="alert alert-success d-none">
+      ✅ <strong>Laporan berhasil dikirim!</strong><br>
+      Nomor referensi: <strong id="referenceNumber">-</strong><br>
+      <small>Laporan akan divalidasi oleh admin. Terima kasih atas partisipasi Anda.</small>
+    </div>
+
+    <form id="publicReportForm">
+      <div class="form-group">
+        <label>Judul / Perihal Konflik <span class="required">*</span></label>
+        <input type="text" id="publicJudul" class="form-control" required placeholder="Contoh: Konflik lahan di Desa X">
+      </div>
+
+      <div class="form-group">
+        <label>Kecamatan <span class="required">*</span></label>
+        <select id="publicKecamatan" class="form-control" required>
+          <option value="">Pilih Kecamatan</option>
+          <option value="8">Kepahiang</option>
+          <option value="9">Tebat Karai</option>
+          <option value="10">Merigi</option>
+          <option value="11">Kabawetan</option>
+          <option value="12">Muara Kemumu</option>
+          <option value="13">Bermani Ilir</option>
+          <option value="14">Seberang Musi</option>
+          <option value="15">Ujan Mas</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Desa / Kelurahan <span class="required">*</span></label>
+        <input type="text" id="publicDesa" class="form-control" required placeholder="Nama desa/kelurahan">
+      </div>
+
+      <div class="form-group">
+        <label>Alamat / Titik Lokasi <span class="required">*</span></label>
+        <textarea id="publicLokasi" class="form-control" rows="2" required placeholder="Contoh: Seberang balai desa, dekat pasar"></textarea>
+        <div class="hint">Jika tahu koordinat GPS, bisa diisi di bawah (opsional)</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="form-group">
+          <label>Latitude</label>
+          <input type="number" step="any" id="publicLat" class="form-control" placeholder="-3.658">
+        </div>
+        <div class="form-group">
+          <label>Longitude</label>
+          <input type="number" step="any" id="publicLng" class="form-control" placeholder="102.568">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Deskripsi Kejadian <span class="required">*</span></label>
+        <textarea id="publicDeskripsi" class="form-control" rows="4" required placeholder="Jelaskan kronologi, pihak terlibat, dan dampak..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Kategori Konflik</label>
+        <select id="publicKategori" class="form-control">
+          <option value="">Pilih (Opsional)</option>
+          <option value="SARA">SARA / Sosial</option>
+          <option value="Ekonomi">Ekonomi / Agraria</option>
+          <option value="Politik">Politik / Pilkada</option>
+          <option value="Bencana">Bencana Alam</option>
+          <option value="Lainnya">Lainnya</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Kontak Anda (Opsional)</label>
+        <input type="text" id="publicKontak" class="form-control" placeholder="Email/HP untuk konfirmasi (tidak ditampilkan publik)">
+        <div class="hint">Data kontak hanya untuk admin, tidak akan dipublikasikan.</div>
+      </div>
+
+      <!-- Simple Anti-Spam: Honeypot Field -->
+      <div style="display:none">
+        <label>Jangan isi field ini</label>
+        <input type="text" id="honeypot" name="honeypot">
+      </div>
+
+      <button type="submit" class="btn-primary" style="width:100%">📤 Kirim Laporan</button>
+    </form>
+
+    <div style="text-align:center;margin-top:2rem;padding-top:1rem;border-top:1px solid #e2e8f0">
+      <p style="margin:0;color:#64748b;font-size:0.9rem">
+        🛡️ Laporan Anda akan divalidasi oleh admin sebelum dipublikasikan.<br>
+        <a href="login.html" style="color:#1e40af;text-decoration:none">Sudah punya akun? Login di sini</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script>
+    // Simple public report submit
+    document.getElementById('publicReportForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      // Anti-spam: honeypot check
+      if (document.getElementById('honeypot').value) {
+        alert('Terjadi kesalahan. Silakan coba lagi.');
+        return;
+      }
+      
+      const btn = e.target.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.textContent = '⏳ Mengirim...';
+      
+      try {
+        const payload = {
+          judul: document.getElementById('publicJudul').value.trim(),
+          kecamatan_id: parseInt(document.getElementById('publicKecamatan').value),
+          alamat_lokasi: document.getElementById('publicLokasi').value.trim(),
+          desa: document.getElementById('publicDesa').value.trim(), // Simpan sebagai text dulu
+          lokasi_lat: parseFloat(document.getElementById('publicLat').value) || null,
+          lokasi_lng: parseFloat(document.getElementById('publicLng').value) || null,
+          deskripsi: document.getElementById('publicDeskripsi').value.trim(),
+          kategori: document.getElementById('publicKategori').value || 'Lainnya',
+          contact_info: document.getElementById('publicKontak').value.trim() || null,
+          
+          // ✅ Flag khusus laporan publik
+          is_public: true,
+          status: 'pending_validation', // ⚠️ Tidak langsung masuk sistem aktif
+          
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        
+        const { data, error } = await window.sbClient
+          .from('conflict_reports')
+          .insert([payload])
+          .select('id')
+          .single();
+        
+        if (error) throw error;
+        
+        // Tampilkan sukses
+        document.getElementById('publicReportForm').style.display = 'none';
+        document.getElementById('successMessage').classList.remove('d-none');
+        document.getElementById('referenceNumber').textContent = `REF-${data.id}-${Date.now().toString(36).slice(0,4).toUpperCase()}`;
+        
+        // Reset form (opsional)
+        // e.target.reset();
+        
+      } catch (err) {
+        console.error('Gagal kirim laporan publik:', err);
+        alert('❌ Gagal mengirim laporan: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '📤 Kirim Laporan';
+      }
+    });
+  </script>
+</body>
+</html>

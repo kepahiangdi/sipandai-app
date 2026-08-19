@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="robots" content="noindex, nofollow"/>
+  <title>Pelaporan - SIPANDAI Kepahiang</title>
+  
+  <link rel="icon" type="image/x-icon" href="assets/icons/favicon.ico">
+  
+  <!-- CSS External -->
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/laporan.css" />
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <img src="assets/img/logo-kepahiang.jpg" alt="Logo">
+      <span>SIPANDAI</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+      <a href="laporan.html" class="nav-link active">📝 Pelaporan</a>
+      <a href="peta.html" class="nav-link">🗺️ Peta Konflik</a>
+      <a href="koordinasi.html" class="nav-link">🤝 Koordinasi</a>
+      <a href="profil.html" class="nav-link">👤 Profil & SOP</a>
+      <a href="users.html" class="nav-link">👥 Kelola User</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button id="btnLogout" class="btn-logout">🚪 Keluar</button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button id="toggleSidebar" class="btn-icon mobile-only">☰</button>
+        <h1>Manajemen Laporan Konflik Sosial</h1>
+      </div>
+      <div class="topbar-right">
+        <div class="user-profile">
+          <img src="assets/icons/avatar.png" alt="Avatar" class="avatar" id="globalAvatar">
+          <span id="userName">Operator Kesbangpol</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="content-wrapper">
+      
+      <!-- Section: Form Pelaporan -->
+      <section class="card form-section">
+        <div class="card-header">
+          <h2>📝 Input Laporan Baru</h2>
+          <span class="badge-info">Real-time ke Database Pusat</span>
+        </div>
+        <form id="formLaporan" class="report-form" enctype="multipart/form-data">
+          
+          <div class="form-grid">
+            <!-- Judul -->
+            <div class="form-group full-width">
+              <label for="laporanJudul">Judul / Perihal Konflik *</label>
+              <input type="text" id="laporanJudul" name="judul" class="form-control" placeholder="Contoh: Konflik Lahan di Desa X" required>
+            </div>
+
+            <!-- Kecamatan & Desa (Cascading Dropdown) -->
+            <div class="form-group">
+              <label for="laporanKecamatan">Kecamatan *</label>
+              <select id="laporanKecamatan" name="kecamatan_id" class="form-control" required>
+                <option value="">Pilih Kecamatan *</option>
+                <!-- Diisi otomatis oleh JS dari Supabase -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="laporanDesa">Desa / Kelurahan *</label>
+              <select id="laporanDesa" name="desa_id" class="form-control" required disabled>
+                <option value="">Pilih Kecamatan Dulu</option>
+                <!-- Diisi otomatis setelah kecamatan dipilih -->
+              </select>
+            </div>
+
+            <!-- Kategori & Risiko (Opsional dengan Default) -->
+            <div class="form-group">
+              <label for="laporanKategori">Kategori Konflik</label>
+              <select id="laporanKategori" name="kategori" class="form-control">
+                <option value="">Pilih Kategori (Opsional)</option>
+                <option value="SARA">SARA / Sosial</option>
+                <option value="Ekonomi">Ekonomi / Agraria</option>
+                <option value="Politik">Politik / Pilkada</option>
+                <option value="Bencana">Bencana Alam</option>
+                <option value="Lainnya">Lainnya</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="laporanRisiko">Tingkat Risiko</label>
+              <select id="laporanRisiko" name="tingkat_risiko" class="form-control">
+                <option value="Sedang">🟡 Sedang (Default)</option>
+                <option value="Rendah">🟢 Rendah</option>
+                <option value="Tinggi">🔴 Tinggi</option>
+                <option value="Kritis">🚨 Kritis</option>
+              </select>
+            </div>
+
+            <!-- Lokasi & Koordinat -->
+            <div class="form-group full-width">
+              <label for="laporanLokasi">Alamat / Titik Lokasi Spesifik</label>
+              <textarea id="laporanLokasi" name="alamat_lokasi" class="form-control" rows="2" placeholder="Contoh: Seberang Kantor Desa, dekat jembatan kayu"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="laporanLat">Latitude</label>
+              <input type="number" step="any" id="laporanLat" name="lokasi_lat" class="form-control" placeholder="-3.658">
+            </div>
+            <div class="form-group">
+              <label for="laporanLng">Longitude</label>
+              <input type="number" step="any" id="laporanLng" name="lokasi_lng" class="form-control" placeholder="102.568">
+            </div>
+
+            <!-- Deskripsi -->
+            <div class="form-group full-width">
+              <label for="laporanDeskripsi">Deskripsi Kejadian *</label>
+              <textarea id="laporanDeskripsi" name="deskripsi" class="form-control" rows="4" placeholder="Jelaskan kronologi, pihak terlibat, dan dampak awal..." required></textarea>
+            </div>
+
+            <!-- Upload Bukti -->
+            <div class="form-group full-width">
+              <label>Lampiran Bukti (Foto/Video/Dokumen)</label>
+              <div class="upload-area">
+                <input type="file" id="laporanBukti" name="bukti" class="upload-input" accept="image/*,video/*,.pdf" multiple>
+                <label for="laporanBukti" class="upload-label">
+                  📎 Klik atau seret file ke sini
+                  <span class="upload-hint">Maks. 10MB per file (JPG, PNG, MP4, PDF)</span>
+                </label>
+              </div>
+              <div id="filePreview" class="file-preview"></div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-secondary" id="btnReset">🔄 Reset</button>
+            <button type="submit" class="btn-primary" id="btnSubmitLaporan">📤 Kirim Laporan</button>
+          </div>
+        </form>
+      </section>
+
+
+<!-- Section: Daftar Laporan & Validasi (TABBED) -->
+<section class="card list-section">
+  <div class="card-header">
+    <h2> Manajemen Laporan</h2>
+    <div class="header-actions">
+      <button class="btn-outline" id="btnExport">📥 Export Excel</button>
+      <button class="btn-icon" title="Refresh">🔄</button>
+    </div>
+  </div>
+
+</section>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+          <select id="filterKecamatanList" class="form-select">
+            <option value="">Semua Kecamatan</option>
+          </select>
+          <select id="filterStatusList" class="form-select">
+            <option value="">Semua Status</option>
+            <option value="baru">Baru</option>
+            <option value="diproses">Diproses</option>
+            <option value="selesai">Selesai</option>
+          </select>
+          <select id="filterRisikoList" class="form-select">
+            <option value="">Semua Risiko</option>
+            <option value="Rendah">Rendah</option>
+            <option value="Sedang">Sedang</option>
+            <option value="Tinggi">Tinggi</option>
+            <option value="Kritis">Kritis</option>
+          </select>
+          <input type="text" id="searchLaporan" class="form-input" placeholder="🔍 Cari judul/desa...">
+        </div>
+
+        <!-- Table -->
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th width="5%">No</th>
+                <th width="12%">Tanggal</th>
+                <th width="20%">Lokasi</th>
+                <th width="12%">Kategori</th>
+                <th width="10%">Risiko</th>
+                <th width="10%">Status</th>
+                <th width="15%">Pelapor</th>
+                <th width="16%">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="tableLaporan">
+              <tr>
+                <td colspan="8" class="text-center text-muted">Memuat data laporan...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination">
+          <button class="page-btn" disabled>← Sebelumnya</button>
+          <span class="page-info">Halaman 1 dari 5</span>
+          <button class="page-btn">Selanjutnya →</button>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Modal Detail Laporan -->
+  <div id="modalDetail" class="modal-overlay d-none">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalTitle">📄 Detail Laporan</h3>
+        <button class="modal-close" id="closeModal">&times;</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <!-- Diisi dinamis via JS -->
+      </div>
+      <div class="modal-footer">
+        <!-- Section Update Status (muncul hanya jika user berhak) -->
+        <div id="modalUpdateSection" class="d-none" style="margin-bottom:1rem;padding:0.75rem;background:#f8fafc;border-radius:8px">
+          <label style="display:block;font-weight:600;margin-bottom:0.5rem">🔄 Update Status Laporan</label>
+          <input type="hidden" id="updateReportId">
+          <select id="updateStatusSelect" class="form-control" style="margin-bottom:0.5rem">
+            <option value="baru">Baru</option>
+            <option value="diproses">Diproses</option>
+            <option value="selesai">Selesai</option>
+            <option value="ditutup">Ditutup</option>
+          </select>
+          <button type="button" class="btn-primary btn-sm" onclick="document.getElementById('formUpdateStatus')?.requestSubmit()">💾 Simpan Perubahan</button>
+        </div>
+        
+        <form id="formUpdateStatus" style="display:none">
+          <!-- Form hidden untuk trigger submit via JS -->
+        </form>
+        
+        <button class="btn-secondary" id="closeModalBtn">Tutup</button>
+        <button class="btn-outline" id="printBtn">🖨️ Cetak</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/reports.js"></script>
+  <script src="js/users.js"></script>
+</body>
+</html>

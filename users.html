@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kelola Pengguna - SIPANDAI</title>
+  <link rel="icon" type="image/x-icon" href="assets/icons/favicon.ico">
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="dashboard-layout">
+
+  <!-- Sidebar (Sama seperti halaman lain) -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <img src="assets/img/logo-kepahiang.jpg" alt="Logo">
+      <span>SIPANDAI</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-link"> Dashboard</a>
+      <a href="laporan.html" class="nav-link">📝 Pelaporan</a>
+      <a href="peta.html" class="nav-link">🗺️ Peta Konflik</a>
+      <a href="koordinasi.html" class="nav-link">🤝 Koordinasi</a>
+      <a href="profil.html" class="nav-link">👤 Profil</a>
+      <a href="users.html" class="nav-link active">👥 Kelola User</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button id="btnLogout" class="btn-logout">🚪 Keluar</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <div class="topbar-left"><h1>Kelola Pengguna Sistem</h1></div>
+      <div class="topbar-right">
+        <div class="user-profile">
+          <img src="assets/icons/avatar.png" alt="Avatar" class="avatar" id="globalAvatar">
+          <span id="userName">Admin</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="content-wrapper">
+      
+      <!-- Form Tambah User -->
+      <section class="card">
+        <div class="card-header"><h2>➕ Tambah Pengguna Baru</h2></div>
+        <form id="formAddUser" class="user-form">
+          <div class="form-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:1rem; margin-bottom:1rem;">
+            <div class="form-group">
+              <label>Nama Lengkap *</label>
+              <input type="text" id="newNama" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label>Username *</label>
+              <input type="text" id="newUsername" class="form-control" required placeholder="tanpa spasi, contoh: operator_kepahiang">
+            </div>
+            <div class="form-group">
+              <label>Password *</label>
+              <input type="password" id="newPassword" class="form-control" required minlength="8">
+            </div>
+            <div class="form-group">
+              <label>Role *</label>
+              <select id="newRole" class="form-control" required>
+                <option value="operator_kec">Operator Kecamatan</option>
+                <option value="viewer">Viewer / Staf</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Kecamatan (jika operator)</label>
+              <select id="newKecamatan" class="form-control">
+                <option value="">-- Semua / Viewer --</option>
+                <option value="8">Kepahiang</option>
+                <option value="9">Tebat Karai</option>
+                <option value="10">Merigi</option>
+                <option value="11">Kabawetan</option>
+                <option value="12">Muara Kemumu</option>
+                <option value="13">Bermani Ilir</option>
+                <option value="14">Seberang Musi</option>
+                <option value="15">Ujan Mas</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">📤 Buat Akun</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Daftar User -->
+      <section class="card">
+        <div class="card-header">
+          <h2>📋 Daftar Pengguna Aktif</h2>
+          <button class="btn-outline" id="btnRefresh">🔄 Refresh</button>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Nama</th>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Kecamatan</th>
+                <th>Bergabung</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="userTableBody">
+              <tr><td colspan="6" class="text-center">Memuat data...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/users.js"></script>
+</body>
+</html>

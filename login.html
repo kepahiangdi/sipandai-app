@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Login SIPANDAI - Sistem Informasi Pemantauan dan Deteksi Dini"/>
+  <title>Login - SIPANDAI Kepahiang</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="assets/icons/favicon.ico">
+  
+  <!-- CSS External -->
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body class="login-page">
+
+  <!-- Background Wrapper -->
+  <div class="login-wrapper">
+    
+    <!-- Logo & Brand -->
+    <div class="login-brand">
+      <img src="assets/img/logo-kepahiang.jpg" alt="Logo Kabupaten Kepahiang" class="brand-logo">
+      <h1>SIPANDAI</h1>
+      <p class="brand-subtitle">Sistem Informasi Pemantauan dan Deteksi Dini<br/>Kabupaten Kepahiang</p>
+    </div>
+
+    <!-- Login Card -->
+    <div class="login-card">
+      
+      <!-- Header Card -->
+      <div class="login-header">
+        <h2>Masuk Akun</h2>
+        <p class="text-muted">Silakan login untuk mengakses dashboard</p>
+      </div>
+
+      <!-- Form Login -->
+      <form id="formLogin" class="login-form" novalidate>
+        
+        <!-- Email Input -->
+        <div class="form-group">
+          <label for="email">Email / Username</label>
+          <input 
+            type="text" 
+            id="username"
+            name="email" 
+            class="form-control" 
+            placeholder="Masukkan email atau username"
+            required
+            autocomplete="username"
+          >
+          <span class="form-error" id="emailError"></span>
+        </div>
+
+        <!-- Password Input -->
+        <div class="form-group">
+          <label for="password">Password</label>
+          <div class="password-wrapper">
+            <input 
+              type="password" 
+              id="password" 
+              name="password" 
+              class="form-control" 
+              placeholder="Masukkan password"
+              required
+              autocomplete="current-password"
+            >
+            <button type="button" class="password-toggle" id="togglePassword" aria-label="Tampilkan password">
+              👁️
+            </button>
+          </div>
+          <span class="form-error" id="passwordError"></span>
+        </div>
+
+        <!-- Remember & Forgot -->
+        <div class="form-options">
+          <label class="checkbox-label">
+            <input type="checkbox" id="remember" name="remember">
+            <span>Ingat saya</span>
+          </label>
+          <a href="#" class="forgot-link" id="forgotPassword">Lupa password?</a>
+        </div>
+
+        <!-- Error Message Box -->
+        <div class="alert alert-danger d-none" id="loginError" role="alert"></div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn-primary btn-block" id="btnSubmit">
+          <span class="btn-text">Masuk</span>
+          <span class="btn-loading d-none">Memproses...</span>
+        </button>
+
+      </form>
+
+      <!-- Footer Card -->
+      <div class="login-footer">
+        <p>Belum memiliki akun? <a href="mailto:kesbangpol@kepahiangkab.go.id">Hubungi Admin</a></p>
+        <p class="mt-2"><a href="index.html">← Kembali ke Beranda</a></p>
+      </div>
+
+    </div>
+
+    <!-- Security Notice -->
+    <div class="login-notice">
+      <small>🔒 Sistem ini hanya untuk pengguna resmi Badan Kesbangpol Kabupaten Kepahiang. Seluruh aktivitas tercatat dalam audit log.</small>
+    </div>
+
+  </div>
+
+  <!-- Scripts: Load Supabase CDN first -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- App Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+
+</body>
+</html>

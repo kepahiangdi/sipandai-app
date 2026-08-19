@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="robots" content="noindex, nofollow"/>
+  <title>Peta Rawan Konflik - SIPANDAI Kepahiang</title>
+  
+  <link rel="icon" type="image/x-icon" href="assets/icons/favicon.ico">
+  
+  <!-- CSS External -->
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/maps.css" />
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+</head>
+<body class="dashboard-layout">
+
+  <!-- Sidebar (Consistent) -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <img src="assets/img/logo-kepahiang.jpg" alt="Logo">
+      <span>SIPANDAI</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+      <a href="laporan.html" class="nav-link">📝 Pelaporan</a>
+      <a href="peta.html" class="nav-link active">🗺️ Peta Konflik</a>
+      <a href="koordinasi.html" class="nav-link">🤝 Koordinasi</a>
+      <a href="profil.html" class="nav-link">👤 Profil & SOP</a>
+      <a href="users.html" class="nav-link">👥 Kelola User</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button id="btnLogout" class="btn-logout">🚪 Keluar</button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content map-page">
+    
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button id="toggleSidebar" class="btn-icon mobile-only">☰</button>
+        <h1>Pemetaan Wilayah Rawan Konflik</h1>
+      </div>
+      <div class="topbar-right">
+        <div class="user-profile">
+          <img src="assets/icons/avatar.png" alt="Avatar" class="avatar" id="globalAvatar">
+          <span id="userName">Operator Kesbangpol</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Map Container -->
+ <div id="map" class="map-container">
+  <!-- Controls HARUS di dalam sini agar CSS position:absolute bekerja sempurna -->
+  <div class="map-controls">
+    <button id="btnToggleFilters" class="control-btn" title="Filter">🔍</button>
+    <button id="btnLocateMe" class="control-btn" title="Lokasi Saya">📍</button>
+    <button id="btnResetView" class="control-btn" title="Reset Tampilan">🔄</button>
+  </div>
+  <!-- Legend & Filter Panel juga bisa diletakkan di sini atau di luar, CSS sudah mengikatnya -->
+</div>
+
+    <!-- Filter Panel (Slide-over) -->
+<!-- Filter Panel -->
+<aside id="filterPanel" class="filter-panel">
+  <div class="panel-header">
+    <h3>🔍 Filter Peta</h3>
+    <button id="closeFilterPanel" class="panel-close">&times;</button>
+  </div>
+  <div class="panel-body">
+    <div class="filter-group">
+      <label>Tingkat Risiko</label>
+      <label class="checkbox-label">
+        <input type="checkbox" class="filter-risk" value="Kritis" checked> 
+        🚨 Kritis
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" class="filter-risk" value="Tinggi" checked> 
+        🔴 Tinggi
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" class="filter-risk" value="Sedang" checked> 
+        🟡 Sedang
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" class="filter-risk" value="Rendah" checked> 
+        🟢 Rendah
+      </label>
+    </div>
+    <div class="filter-group">
+      <label>Kategori Konflik</label>
+      <label class="checkbox-label">
+        <input type="checkbox" class="filter-cat" value="SARA" checked> 
+        SARA / Sosial
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" class="filter-cat" value="Ekonomi" checked> 
+        Ekonomi / Agraria
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" class="filter-cat" value="Politik" checked> 
+        Politik / Pilkada
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" class="filter-cat" value="Bencana" checked> 
+        Bencana Alam
+      </label>
+    </div>
+    <button id="applyFilters" class="btn-primary w-100">Terapkan Filter</button>
+  </div>
+</aside>
+
+    <!-- Map Legend -->
+    <div class="map-legend">
+      <h4>Legenda Zona</h4>
+      <div class="legend-item"><span class="legend-dot kritis"></span> Zona Kritis</div>
+      <div class="legend-item"><span class="legend-dot tinggi"></span> Zona Tinggi</div>
+      <div class="legend-item"><span class="legend-dot sedang"></span> Zona Sedang</div>
+      <div class="legend-item"><span class="legend-dot rendah"></span> Zona Rendah</div>
+      <hr>
+      <div class="legend-item"><span class="legend-marker"></span> Titik Laporan</div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div id="mapDetailModal" class="modal-overlay d-none">
+      <div class="modal-content map-modal">
+        <div class="modal-header">
+          <h3 id="modalTitle">Detail Laporan</h3>
+          <button id="closeMapModal" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body" id="modalBody">
+          <!-- Diisi dinamis via JS -->
+        </div>
+        <div class="modal-footer">
+          <a href="laporan.html" class="btn-primary">Buka di Laporan</a>
+          <button class="btn-secondary" id="btnPrintModal">🖨️ Cetak</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/maps.js"></script>
+  <script src="js/users.js"></script>
+</body>
+</html>
