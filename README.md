@@ -13,6 +13,7 @@ database, autentikasi, dan penyimpanan berkas.
 - **Dashboard** — statistik, tren 7 hari, komposisi kategori, mini peta, peringatan dini
 - **Pelaporan** — formulir laporan konflik dengan dropdown kecamatan → desa, unggah bukti, ekspor CSV, cetak PDF
 - **Peta Konflik** — sebaran laporan di peta Kepahiang dengan penanda warna sesuai tingkat risiko
+- **Lapor dari Peta** — petugas kecamatan menandai titik kejadian langsung di peta atau lewat GPS, melampirkan foto, lalu mengirim laporan dari lapangan. Tanpa sinyal, laporan tersimpan di perangkat dan terkirim otomatis saat koneksi pulih
 - **Koordinasi** — agenda rapat/monitoring, notulensi, tindak lanjut, arsip
 - **Kanal Laporan Publik** — warga dapat melapor tanpa akun; laporan masuk antrean validasi admin
 - **Kelola Pengguna** — admin membuat akun operator kecamatan / viewer
