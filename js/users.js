@@ -1,28 +1,64 @@
 /**
  * js/users.js
- * User Management - Hanya bisa diakses oleh admin_kesbangpol
- * Menggunakan signUp + profile update (aman selama email confirmation OFF)
+ * Manajemen Pengguna — HANYA untuk halaman users.html (admin_kesbangpol)
+ *
+ * Perbaikan penting:
+ *  1. Guard admin hanya berjalan bila elemen users.html benar-benar ada.
+ *     Sebelumnya file ini ikut dimuat di dashboard/laporan/peta/koordinasi/profil
+ *     sehingga operator & viewer selalu ditendang keluar.
+ *  2. Sesi admin dipulihkan setelah auth.signUp(). Tanpa ini, admin otomatis
+ *     "berganti identitas" menjadi user yang baru saja dibuat.
+ *  3. Role & kecamatan dikirim lewat metadata signUp dan dipasang oleh trigger
+ *     handle_new_user di database (tidak lagi lewat UPDATE dari sisi klien).
+ *  4. Dropdown kecamatan diisi dari tabel kecamatan, bukan hardcode.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // 🛡️ Guard: Hanya admin yang boleh akses
+  // 🚦 Hanya jalan di halaman users.html
+  if (!document.getElementById('userTableBody')) return;
+
   const user = JSON.parse(localStorage.getItem('sipandai_user') || '{}');
   if (user.role !== 'admin_kesbangpol') {
-    window.app.showToast(' Akses ditolak. Hanya admin yang bisa mengelola user.', 'error');
-    setTimeout(() => window.location.href = 'dashboard.html', 1500);
+    window.app?.showToast?.('🚫 Akses ditolak. Hanya admin yang bisa mengelola user.', 'error');
+    setTimeout(() => (window.location.href = 'dashboard.html'), 1500);
     return;
   }
 
+  await loadKecamatanOptions();
   await loadUsers();
   setupAddUserForm();
 });
+
+// 📍 Isi dropdown kecamatan dari database
+async function loadKecamatanOptions() {
+  const select = document.getElementById('newKecamatan');
+  if (!select || !window.sbClient) return;
+
+  try {
+    const { data, error } = await window.sbClient
+      .from('kecamatan')
+      .select('id, nama')
+      .order('nama');
+    if (error) throw error;
+
+    select.innerHTML = '<option value="">-- Semua / Viewer --</option>';
+    data.forEach(k => {
+      const opt = document.createElement('option');
+      opt.value = k.id;
+      opt.textContent = k.nama;
+      select.appendChild(opt);
+    });
+  } catch (err) {
+    console.warn('⚠️ Gagal memuat kecamatan, memakai daftar bawaan:', err.message);
+  }
+}
 
 // 📥 Load daftar user dari tabel profiles
 async function loadUsers() {
   try {
     const { data, error } = await window.sbClient
       .from('profiles')
-      .select('id, nama_lengkap, role, kecamatan_id, created_at, kecamatan(nama)')
+      .select('id, nama_lengkap, role, kecamatan_id, is_active, created_at, kecamatan(nama)')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -38,10 +74,10 @@ async function loadUsers() {
 
     data.forEach(u => {
       const tr = document.createElement('tr');
-      const username = u.id ? u.id.split('-')[0] + '...' : '-'; // Tampilkan sebagian ID sebagai username proxy
+      const idPendek = u.id ? u.id.split('-')[0] + '…' : '-';
       tr.innerHTML = `
-        <td><strong>${u.nama_lengkap || '-'}</strong></td>
-        <td><code>${username}</code></td>
+        <td><strong>${escapeHtml(u.nama_lengkap) || '-'}</strong></td>
+        <td><code title="${u.id}">${idPendek}</code></td>
         <td><span class="status-badge ${u.role === 'admin_kesbangpol' ? 'status-diproses' : 'status-baru'}">${u.role}</span></td>
         <td>${u.kecamatan?.nama || (u.role === 'admin_kesbangpol' ? 'Semua' : '-')}</td>
         <td>${window.app.formatDate(u.created_at)}</td>
@@ -57,8 +93,14 @@ async function loadUsers() {
 
   } catch (err) {
     console.error('Gagal load user:', err);
-    window.app.showToast('Gagal memuat daftar user', 'error');
+    window.app.showToast('Gagal memuat daftar user: ' + err.message, 'error');
   }
+}
+
+function escapeHtml(s) {
+  return (s ?? '').toString().replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
 }
 
 // ➕ Handle form tambah user
@@ -79,69 +121,94 @@ function setupAddUserForm() {
       window.app.showToast('Semua field wajib diisi', 'error');
       return;
     }
+    if (role === 'operator_kec' && !kecamatan_id) {
+      window.app.showToast('Operator kecamatan wajib dipilihkan kecamatannya', 'error');
+      return;
+    }
 
     const btn = form.querySelector('button[type="submit"]');
     window.app.setLoading(btn, true);
 
+    // 🔐 Simpan sesi admin dulu — signUp akan menimpa sesi aktif
+    const { data: { session: adminSession } } = await window.sbClient.auth.getSession();
+
     try {
-      // 1. Buat user di Auth (format internal @sipandai.local)
+      const domain = window.APP_CONFIG?.authEmailDomain || 'sipandai.local';
+
       const { data, error: signUpError } = await window.sbClient.auth.signUp({
-        email: `${username}@sipandai.local`,
+        email: `${username}@${domain}`,
         password: password,
         options: {
-          data: { nama_lengkap: nama } // metadata opsional
+          // Dibaca oleh trigger handle_new_user() di database
+          data: {
+            nama_lengkap: nama,
+            role: role,                                  // hanya operator_kec / viewer diterima DB
+            kecamatan_id: kecamatan_id ? String(kecamatan_id) : ''
+          }
         }
       });
 
       if (signUpError) throw signUpError;
       if (!data.user) throw new Error('Gagal membuat user');
 
-      // 2. Update profile dengan role & kecamatan_id (trigger handle_new_user sudah buat baris kosong)
-      const { error: updateError } = await window.sbClient
-        .from('profiles')
-        .update({
-          nama_lengkap: nama,
-          role: role,
-          kecamatan_id: kecamatan_id ? parseInt(kecamatan_id) : null
-        })
-        .eq('id', data.user.id);
-
-      if (updateError) throw updateError;
-
-      window.app.showToast(`✅ User "${nama}" berhasil dibuat. Username: ${username}`, 'success');
+      window.app.showToast(`✅ User "${nama}" dibuat. Username untuk login: ${username}`, 'success');
       form.reset();
-      await loadUsers(); // Refresh tabel
 
     } catch (err) {
       console.error('Gagal buat user:', err);
       let msg = err.message || 'Gagal membuat user';
-      if (msg.includes('already registered')) msg = 'Username sudah digunakan. Coba yang lain.';
+      if (/already registered|already been registered/i.test(msg)) {
+        msg = 'Username sudah digunakan. Coba yang lain.';
+      }
       window.app.showToast('❌ ' + msg, 'error');
+
     } finally {
+      // 🔐 Kembalikan sesi admin apa pun hasilnya
+      if (adminSession) {
+        try {
+          await window.sbClient.auth.setSession({
+            access_token: adminSession.access_token,
+            refresh_token: adminSession.refresh_token
+          });
+        } catch (e) {
+          console.warn('⚠️ Gagal memulihkan sesi admin:', e.message);
+        }
+      }
       window.app.setLoading(btn, false);
+      await loadUsers();
     }
   });
 }
 
 // 🔁 Reset password (kirim link reset via Supabase)
 window.resetUserPassword = async (userId) => {
-  const email = prompt('Masukkan email internal user (contoh: operator_kepahiang@sipandai.local):');
-  if (!email) return;
+  const domain = window.APP_CONFIG?.authEmailDomain || 'sipandai.local';
+  const username = prompt(`Masukkan username user tersebut (tanpa @${domain}):`);
+  if (!username) return;
+
+  const email = `${username.trim().toLowerCase().replace(/\s+/g, '_')}@${domain}`;
 
   try {
     const { error } = await window.sbClient.auth.resetPasswordForEmail(email, {
       redirectTo: window.location.origin + '/login.html'
     });
     if (error) throw error;
-    window.app.showToast('✅ Link reset password dikirim. User bisa ganti password via login.', 'success');
+    window.app.showToast(
+      `✅ Permintaan reset dikirim untuk ${email}. ` +
+      'Catatan: domain internal .local tidak menerima email — untuk kasus ini ganti password lewat Supabase Dashboard → Authentication → Users.',
+      'info'
+    );
   } catch (err) {
     window.app.showToast('Gagal: ' + err.message, 'error');
   }
 };
 
-// ️ Hapus user (cascade ke auth.users jika trigger setup benar)
+// 🗑️ Hapus user
+// Catatan: ini menghapus baris di public.profiles. Akun di auth.users TIDAK ikut
+// terhapus dari sisi klien (butuh service_role). Hapus juga lewat
+// Supabase Dashboard → Authentication → Users bila ingin benar-benar bersih.
 window.confirmDeleteUser = async (userId) => {
-  if (!confirm('⚠️ Yakin ingin menghapus user ini? Data laporan yang dibuat tetap tersimpan.')) return;
+  if (!confirm('⚠️ Hapus profil user ini?\n\nData laporan yang pernah dibuat tetap tersimpan.\nAkun login-nya masih perlu dihapus manual di Supabase Dashboard → Authentication → Users.')) return;
 
   try {
     const { error } = await window.sbClient
@@ -151,7 +218,7 @@ window.confirmDeleteUser = async (userId) => {
 
     if (error) throw error;
 
-    window.app.showToast('🗑️ User berhasil dihapus', 'success');
+    window.app.showToast('🗑️ Profil user berhasil dihapus', 'success');
     await loadUsers();
   } catch (err) {
     window.app.showToast('Gagal hapus: ' + err.message, 'error');

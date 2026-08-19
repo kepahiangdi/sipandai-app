@@ -43,11 +43,18 @@ async function initReportPage() {
   setupFilePreview();
   setupModal();
   setupExport();
+  setupTabs();
   preloadUserData();
-  
+
   // Fetch data laporan setelah UI siap
   await fetchReports();
-  
+
+  // Admin: langsung hitung antrean validasi laporan publik
+  const user = JSON.parse(localStorage.getItem('sipandai_user') || '{}');
+  if (user.role === 'admin_kesbangpol') {
+    await fetchPendingValidation();
+  }
+
   // Setup real-time subscription (opsional)
   setupRealtimeSubscription();
 }
@@ -163,6 +170,8 @@ async function fetchReports(filters = {}) {
         desa (id, nama),
         profiles (id, nama_lengkap, role)
       `, { count: 'exact' })
+      // laporan publik yang belum divalidasi punya tabnya sendiri
+      .not('status', 'in', '("pending_validation","ditolak")')
       .order('created_at', { ascending: false });
 
     // Filter server-side
@@ -226,6 +235,22 @@ function preloadUserData() {
     if (select) {
       select.value = user.kecamatan_id;
       loadDesaDropdown(user.kecamatan_id); // Auto-load desa jika user punya kecamatan
+
+      // 🔒 Operator kecamatan hanya boleh melapor untuk wilayahnya sendiri.
+      // Ini mencerminkan aturan RLS di database, supaya tidak menabrak
+      // "row-level security policy violation" saat submit.
+      if (user.role === 'operator_kec') {
+        select.disabled = true;
+        select.title = 'Operator hanya dapat melapor untuk kecamatannya sendiri';
+        // input hidden agar nilai tetap ikut terkirim walau select disabled
+        if (!document.getElementById('laporanKecamatanLocked')) {
+          const hidden = document.createElement('input');
+          hidden.type = 'hidden';
+          hidden.id = 'laporanKecamatanLocked';
+          hidden.value = user.kecamatan_id;
+          select.parentNode.appendChild(hidden);
+        }
+      }
     }
   }
 }
@@ -766,12 +791,14 @@ window.openReportModal = async (id) => {
     // ✅ QUERY SEDERHANA: Hindari join yang bermasalah
     const { data, error } = await window.sbClient
       .from('conflict_reports')
+      // ⚠️ Jangan pernah menaruh komentar SQL (--) di dalam string select PostgREST.
       .select(`
         id, judul, deskripsi, kategori, tingkat_risiko, status,
         lokasi_lat, lokasi_lng, alamat_lokasi, foto_url,
-        created_at, updated_at, kecamatan_id,
-        kecamatan (nama)
-        -- profiles (nama_lengkap) ← KOMEN DULU jika bermasalah
+        created_at, updated_at, kecamatan_id, desa_id,
+        kecamatan (nama),
+        desa (nama),
+        profiles (nama_lengkap)
       `)
       .eq('id', id)
       .single();
@@ -1061,8 +1088,10 @@ async function fetchPendingValidation() {
     const { data, error } = await window.sbClient
       .from('conflict_reports')
       .select(`
-        id, judul, kategori, alamat_lokasi, desa, 
-        contact_info, created_at, kecamatan (nama)
+        id, judul, kategori, alamat_lokasi, desa_nama,
+        contact_info, created_at,
+        kecamatan (nama),
+        desa (nama)
       `)
       .eq('is_public', true)
       .eq('status', 'pending_validation')
@@ -1096,7 +1125,7 @@ function renderPendingValidation(data) {
     tr.innerHTML = `
       <td><strong>REF-${item.id}</strong></td>
       <td>${window.app.formatDate(item.created_at)}</td>
-      <td>${item.kecamatan?.nama || '-'}, ${item.desa || '-'}</td>
+      <td>${item.kecamatan?.nama || '-'}, ${item.desa?.nama || item.desa_nama || '-'}</td>
       <td>${item.judul}</td>
       <td>${item.kategori || 'Lainnya'}</td>
       <td>${item.contact_info ? '📞 Ada' : '-'}</td>
@@ -1166,19 +1195,35 @@ window.viewPublicReportDetail = async (id) => {
   alert(`📄 Detail Laporan #${id}\n\nJudul: ${data.judul}\nLokasi: ${data.alamat_lokasi}\nDeskripsi: ${data.deskripsi}\nKontak: ${data.contact_info || '-'}`);
 };
 
-// Tab switching logic
-document.querySelectorAll('.tab-btn')?.forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('d-none'));
-    
-    e.currentTarget.classList.add('active');
-    const tabId = e.currentTarget.dataset.tab;
-    document.getElementById(`tab-${tabId}`).classList.remove('d-none');
-    
-    // Load data if needed
-    if (tabId === 'validasi-publik') {
-      fetchPendingValidation();
-    }
+// ==========================================
+// 🗂️ TAB SWITCHING
+// ==========================================
+function setupTabs() {
+  const tabs = document.querySelectorAll('.tab-btn');
+  if (!tabs.length) return;
+
+  const setActive = (btn, aktif) => {
+    btn.classList.toggle('active', aktif);
+    btn.style.borderBottomColor = aktif ? '#1e40af' : 'transparent';
+    btn.style.color = aktif ? '#1e40af' : '#64748b';
+  };
+
+  tabs.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      tabs.forEach(b => setActive(b, false));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.add('d-none'));
+
+      setActive(e.currentTarget, true);
+      const tabId = e.currentTarget.dataset.tab;
+      document.getElementById(`tab-${tabId}`)?.classList.remove('d-none');
+
+      if (tabId === 'validasi-publik') fetchPendingValidation();
+    });
   });
+}
+
+// Tombol refresh di header
+document.getElementById('btnRefreshLaporan')?.addEventListener('click', async () => {
+  await fetchReports(currentFilters);
+  window.app.showToast('🔄 Data dimuat ulang', 'info');
 });

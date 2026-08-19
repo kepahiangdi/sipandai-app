@@ -47,12 +47,22 @@ const email = `${usernameInput}@sipandai.local`; // Format internal Supabase
     // Ambil data profile user untuk cek role
     const { data: profile, error: profileError } = await window.sbClient
       .from('profiles')
-      .select('role, kecamatan_id, nama_lengkap')
+      .select('role, kecamatan_id, nama_lengkap, foto_url, is_active')
       .eq('id', data.user.id)
       .single();
-    
+
     if (profileError) throw profileError;
-    
+
+    if (profile.is_active === false) {
+      await window.sbClient.auth.signOut();
+      throw new Error('Akun Anda dinonaktifkan. Hubungi administrator.');
+    }
+
+    // Bersihkan sisa data pengguna sebelumnya (mis. foto profil ter-cache)
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('sipandai_'))
+      .forEach(k => localStorage.removeItem(k));
+
     // Simpan session info ke localStorage
     localStorage.setItem('sipandai_user', JSON.stringify({
       id: data.user.id,
@@ -61,6 +71,7 @@ const email = `${usernameInput}@sipandai.local`; // Format internal Supabase
       role: profile.role,
       kecamatan_id: profile.kecamatan_id
     }));
+    if (profile.foto_url) localStorage.setItem('sipandai_foto_url', profile.foto_url);
     
     // Redirect berdasarkan role
     if (profile.role === 'admin_kesbangpol') {
@@ -120,6 +131,8 @@ document.getElementById('forgotPassword')?.addEventListener('click', async funct
 // Handle logout (bisa dipanggil dari halaman lain)
 async function handleLogout() {
   await window.sbClient.auth.signOut();
-  localStorage.removeItem('sipandai_user');
+  Object.keys(localStorage)
+    .filter(k => k.startsWith('sipandai_'))
+    .forEach(k => localStorage.removeItem(k));
   window.location.href = 'login.html';
 }

@@ -27,7 +27,7 @@ const MAP_CONFIG = {
 };
 
 let map, markersLayer;
-const DEBUG = true; // ✅ Set true untuk lihat log detail
+const DEBUG = false; // Set true untuk lihat log detail saat debugging
 
 // ==========================================
 // 🚀 INIT MAP
@@ -320,8 +320,7 @@ function setupUIListeners() {
     );
   });
 
-  // Logout
-  document.getElementById('btnLogout')?.addEventListener('click', () => {
-    window.location.href = 'login.html';
-  });
+  // Logout ditangani terpusat di js/app.js (signOut + bersihkan localStorage).
+  // Handler duplikat di sini sengaja dihapus karena membuat pengguna
+  // "keluar" tanpa benar-benar mengakhiri sesi Supabase.
 }

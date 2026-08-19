@@ -108,9 +108,12 @@ function setupPhotoUpload() {
       progressFill.style.width = '100%';
       progressText.textContent = 'Selesai!';
       
-      // Update avatar di UI
+      // Update avatar di UI + perbarui cache yang dipakai app.js
       document.getElementById('profileAvatar').src = publicUrl;
-      
+      localStorage.setItem('sipandai_foto_url', publicUrl);
+      const globalAvatar = document.getElementById('globalAvatar');
+      if (globalAvatar) globalAvatar.src = publicUrl;
+
       window.app.showToast('✅ Foto profil berhasil diupdate', 'success');
       
       // Hide progress setelah 1 detik

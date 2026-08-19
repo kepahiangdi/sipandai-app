@@ -7,7 +7,7 @@
 // ==========================================
 // 1. INISIALISASI & PROTECTED PAGE GUARD
 // ==========================================
-const publicPages = ['index.html', 'login.html', '404.html', ''];
+const publicPages = ['index.html', 'login.html', 'laporan-public.html', '404.html', ''];
 
 async function initApp() {
   const currentPage = window.location.pathname.split('/').pop();

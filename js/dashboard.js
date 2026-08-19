@@ -5,7 +5,8 @@
  */
 
 // State global
-let dashboardData = [];
+let dashboardData = [];   // 5 laporan terbaru -> tabel "Laporan Terkini"
+let dashboardAll = [];    // seluruh laporan sesuai filter -> statistik, grafik, peta
 let currentFilters = {};
 const DEBUG = false; // Set true untuk debug, false untuk production
 
@@ -44,12 +45,12 @@ async function initDashboard() {
     
     if (DEBUG) console.log('📡 Fetching dashboard data from Supabase...');
     await fetchDashboardData();
-    
+
     if (DEBUG) console.log('✅ Data fetched, rendering components...');
-    renderStats(dashboardData);
-    await initCharts(dashboardData);
+    renderStats(dashboardAll);
+    await initCharts(dashboardAll);
     renderRecentTable(dashboardData);
-    updateEarlyWarning(dashboardData);
+    updateEarlyWarning(dashboardAll);
     
     // ✅ Init mini map SETELAH data siap
     initMiniMap();
@@ -70,12 +71,15 @@ async function fetchDashboardData(filters = {}) {
       .from('conflict_reports')
       .select(`
         id, judul, kategori, tingkat_risiko, status, created_at,
-        alamat_lokasi, kecamatan_id, lokasi_lat, lokasi_lng,
+        alamat_lokasi, kecamatan_id, desa_id, lokasi_lat, lokasi_lng,
         kecamatan (id, nama),
+        desa (nama),
         profiles (nama_lengkap)
       `, { count: 'exact' })
+      // laporan publik yang belum divalidasi & yang ditolak tidak dihitung
+      .not('status', 'in', '("pending_validation","ditolak")')
       .order('created_at', { ascending: false });
-    
+
     // Apply filters
     if (filters.kecamatan_id) query = query.eq('kecamatan_id', parseInt(filters.kecamatan_id));
     if (filters.status) query = query.eq('status', filters.status);
@@ -89,46 +93,51 @@ async function fetchDashboardData(filters = {}) {
       query = query.eq('kecamatan_id', user.kecamatan_id);
     }
     
-    // Limit 5 untuk recent table
-    query = query.limit(5);
-    
+    // ⚠️ JANGAN .limit(5) di sini.
+    // Sebelumnya statistik & grafik dihitung dari 5 baris saja sehingga
+    // angka "Total Laporan" selalu ≤ 5. Ambil semua (dibatasi 2000 baris
+    // sebagai pengaman), lalu potong 5 teratas untuk tabel "Laporan Terkini".
+    query = query.limit(2000);
+
     const { data, error, count } = await query;
-    
+
     if (error) {
       console.error('❌ Supabase query error:', error);
       throw new Error(`Database error: ${error.message}`);
     }
-    
-    // ✅ Format data: fallback ke alamat_lokasi jika desa join tidak ada
-    dashboardData = (data || []).map(d => ({
+
+    const mapRow = (d) => ({
       id: d.id,
       tgl: d.created_at,
       judul: d.judul,
       kec: d.kecamatan?.nama || '-',
-      desa: d.alamat_lokasi ? d.alamat_lokasi.split(',')[0].trim() : '-',
+      desa: d.desa?.nama || (d.alamat_lokasi ? d.alamat_lokasi.split(',')[0].trim() : '-'),
       kat: d.kategori || 'Lainnya',
       risiko: d.tingkat_risiko || 'Sedang',
       status: d.status,
       pelapor: d.profiles?.nama_lengkap || 'Anonim',
       _raw: d
-    }));
-    
-    if (DEBUG) console.log(`✅ Fetched ${dashboardData.length} records`);
-    return dashboardData;
-    
+    });
+
+    dashboardAll  = (data || []).map(mapRow);
+    dashboardData = dashboardAll.slice(0, 5);
+
+    if (DEBUG) console.log(`✅ Fetched ${dashboardAll.length} records (total di DB: ${count})`);
+    return dashboardAll;
+
   } catch (err) {
     console.error('❌ fetchDashboardData error:', err);
-    
-    // Fallback: simple query tanpa join jika gagal
+
+    // Fallback: query sederhana tanpa join jika relasi bermasalah
     try {
       const { data: fallbackData } = await window.sbClient
         .from('conflict_reports')
-        .select('id, judul, kategori, tingkat_risiko, status, created_at, alamat_lokasi')
-        .limit(5)
+        .select('id, judul, kategori, tingkat_risiko, status, created_at, alamat_lokasi, lokasi_lat, lokasi_lng')
+        .limit(2000)
         .order('created_at', { ascending: false });
-      
+
       if (fallbackData) {
-        dashboardData = fallbackData.map(d => ({
+        dashboardAll = fallbackData.map(d => ({
           id: d.id,
           tgl: d.created_at,
           judul: d.judul,
@@ -140,12 +149,13 @@ async function fetchDashboardData(filters = {}) {
           pelapor: '-',
           _raw: d
         }));
-        return dashboardData;
+        dashboardData = dashboardAll.slice(0, 5);
+        return dashboardAll;
       }
     } catch (e) {
       console.warn('⚠️ Fallback also failed');
     }
-    
+
     throw err;
   }
 }
@@ -362,7 +372,7 @@ window.viewReportDetail = async (id) => {
   try {
     const { data, error } = await window.sbClient
       .from('conflict_reports')
-      .select(`*, kecamatan (nama)`)
+      .select(`*, kecamatan (nama), desa (nama), profiles (nama_lengkap)`)
       .eq('id', id)
       .single();
     
@@ -386,7 +396,7 @@ window.viewReportDetail = async (id) => {
         <div><span class="meta-label" style="color:#64748b;font-size:0.85rem">Status</span><br><strong>${window.app?.formatStatus?.(data.status) || data.status}</strong></div>
         <div><span class="meta-label" style="color:#64748b;font-size:0.85rem">Kategori</span><br><strong>${data.kategori || 'Lainnya'}</strong></div>
         <div><span class="meta-label" style="color:#64748b;font-size:0.85rem">Risiko</span><br><strong style="color:${getRisikoColor(data.tingkat_risiko)}">${window.app?.formatRisiko?.(data.tingkat_risiko) || data.tingkat_risiko}</strong></div>
-        <div><span class="meta-label" style="color:#64748b;font-size:0.85rem">Lokasi</span><br><strong>${data.kecamatan?.nama || '-'}, ${data.alamat_lokasi || '-'}</strong></div>
+        <div><span class="meta-label" style="color:#64748b;font-size:0.85rem">Lokasi</span><br><strong>${data.kecamatan?.nama || '-'}${data.desa?.nama ? ', ' + data.desa.nama : ''}${data.alamat_lokasi ? ' — ' + data.alamat_lokasi : ''}</strong></div>
         <div><span class="meta-label" style="color:#64748b;font-size:0.85rem">Pelapor</span><br><strong>${data.profiles?.nama_lengkap || 'Anonim'}</strong></div>
         ${data.lokasi_lat ? `<div><span class="meta-label" style="color:#64748b;font-size:0.85rem">Koordinat</span><br><strong>${parseFloat(data.lokasi_lat).toFixed(4)}, ${parseFloat(data.lokasi_lng).toFixed(4)}</strong></div>` : ''}
       </div>
@@ -521,11 +531,11 @@ function setupFilters() {
     
     try {
       await fetchDashboardData(filters);
-      renderStats(dashboardData);
-      await initCharts(dashboardData);
+      renderStats(dashboardAll);
+      await initCharts(dashboardAll);
       renderRecentTable(dashboardData);
-      updateEarlyWarning(dashboardData);
-      
+      updateEarlyWarning(dashboardAll);
+
       // ✅ Update mini map markers setelah filter diterapkan
       updateMiniMapMarkers();
       
@@ -597,7 +607,7 @@ function updateMiniMapMarkers() {
   miniMapMarkersGroup = L.featureGroup();
   
   // ✅ Filter: TAMPILKAN SEMUA RISIKO yang punya koordinat valid
-  const allMarkers = dashboardData.filter(d => 
+  const allMarkers = dashboardAll.filter(d => 
     d._raw?.lokasi_lat && 
     d._raw?.lokasi_lng &&
     !isNaN(parseFloat(d._raw.lokasi_lat)) &&
@@ -698,10 +708,10 @@ function setupRealtimeSubscription() {
       
       showLoadingState();
       await fetchDashboardData(currentFilters);
-      renderStats(dashboardData);
-      await initCharts(dashboardData);
+      renderStats(dashboardAll);
+      await initCharts(dashboardAll);
       renderRecentTable(dashboardData);
-      updateEarlyWarning(dashboardData);
+      updateEarlyWarning(dashboardAll);
       updateMiniMapMarkers(); // ✅ Update mini map juga
       
       const messages = {
@@ -716,5 +726,5 @@ function setupRealtimeSubscription() {
     });
 }
 
-// Uncomment baris berikut jika ingin fitur real-time aktif:
-// setupRealtimeSubscription();
+// ✅ Real-time aktif: dashboard ikut ter-update saat ada laporan masuk/berubah
+document.addEventListener('DOMContentLoaded', () => setupRealtimeSubscription());
